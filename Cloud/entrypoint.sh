@@ -27,8 +27,29 @@ fi
 # ── Validate and fix config ──
 if [ -f "/home/node/.openclaw/openclaw.json" ]; then
     echo "🔍 Validating configuration..."
+    
+    # Check for invalid typingMode values (common issue)
+    if grep -q '"typingMode"' /home/node/.openclaw/openclaw.json; then
+        echo "📝 Checking typingMode configuration..."
+        # Valid values: "instant", "typing", "realistic"
+        if ! grep -qE '"typingMode":\s*"(instant|typing|realistic)"' /home/node/.openclaw/openclaw.json; then
+            echo "⚠️  Invalid typingMode detected. Fixing..."
+            sed -i 's/"typingMode"[^,]*,/"typingMode": "instant",/g' /home/node/.openclaw/openclaw.json
+        fi
+    fi
+    
+    # Run OpenClaw doctor to validate full config
     cd /pocketagent/lib/openclaw
-    node dist/index.js doctor --fix 2>/dev/null || echo "⚠️  Config validation skipped (will use defaults)"
+    if node dist/index.js doctor --fix 2>/dev/null; then
+        echo "✅ Configuration validated successfully"
+    else
+        echo "⚠️  Config validation failed. Backing up and using defaults..."
+        if [ -f "/home/node/.openclaw/openclaw.json" ]; then
+            cp /home/node/.openclaw/openclaw.json /home/node/.openclaw/openclaw.json.backup.$(date +%Y%m%d-%H%M%S)
+            rm /home/node/.openclaw/openclaw.json
+            echo "📝 Corrupted config backed up. Fresh config will be generated."
+        fi
+    fi
 else
     echo "📝 No existing config found. Will create on first run."
 fi

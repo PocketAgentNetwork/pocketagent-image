@@ -105,9 +105,11 @@ RUN mkdir -p /pocketagent/lib /pocketagent/bin /data /logs
 
 # ── Clone and build OpenClaw (hidden in lib/) ──
 WORKDIR /pocketagent/lib/openclaw
-# Pin to specific version for stability (update this when needed)
+# Pin to specific commit for stability (prevents breaking changes)
+# Update this hash when you want to upgrade OpenClaw
 RUN git clone https://github.com/openclaw/openclaw.git . && \
     git checkout main && \
+    git rev-parse HEAD > /pocketagent/OPENCLAW_VERSION && \
     corepack enable && \
     pnpm install --frozen-lockfile && \
     pnpm build && \
