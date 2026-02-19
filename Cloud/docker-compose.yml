@@ -1,0 +1,72 @@
+services:
+  pocketagent:
+    build: .
+    container_name: ${CONTAINER_NAME:-pocketagent}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - HOME=/home/node
+      - NODE_ENV=production
+      - TERM=xterm-256color
+      - OPENCLAW_GATEWAY_BIND=${OPENCLAW_GATEWAY_BIND:-lan}
+      - OPENCLAW_GATEWAY_PORT=${OPENCLAW_GATEWAY_PORT:-18789}
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN}
+      - XDG_CONFIG_HOME=/home/node/.openclaw
+
+    # ── Resource Limits ──
+    # Uncomment for production to prevent one container from hogging resources
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "2.0"      # Max 2 CPU cores
+    #       memory: "4G"     # Max 4GB RAM
+    #     reservations:
+    #       cpus: "0.5"      # Guaranteed 0.5 CPU
+    #       memory: "1G"     # Guaranteed 1GB RAM
+
+    volumes:
+      # ── Persistent agent home (installed tools, configs, custom scripts) ──
+      - ${VOLUME_PREFIX:-pocketagent}-home:/home/node
+
+      # ── PocketAgent data (PocketModel, PAN network data) ──
+      - ${VOLUME_PREFIX:-pocketagent}-data:/data
+
+      # ── Logs ──
+      - ${VOLUME_PREFIX:-pocketagent}-logs:/logs
+
+    ports:
+      # For testing: binds to localhost only (secure)
+      # For production: set PORT_BIND="" to expose on all interfaces
+      - "${PORT_BIND:-127.0.0.1:}${OPENCLAW_GATEWAY_PORT:-18789}:18789"
+
+    # ── Health Check ──
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:18789/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # ── Logging (prevents logs from filling disk) ──
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    command: [
+      "pocketagent", "gateway",
+      "--workspace", "/home/node/.openclaw/workspace",
+      "--bind", "${OPENCLAW_GATEWAY_BIND:-lan}",
+      "--port", "${OPENCLAW_GATEWAY_PORT:-18789}",
+      "--allow-unconfigured",
+    ]
+
+volumes:
+  ${VOLUME_PREFIX:-pocketagent}-home:
+    name: ${VOLUME_PREFIX:-pocketagent}-home
+  ${VOLUME_PREFIX:-pocketagent}-data:
+    name: ${VOLUME_PREFIX:-pocketagent}-data
+  ${VOLUME_PREFIX:-pocketagent}-logs:
+    name: ${VOLUME_PREFIX:-pocketagent}-logs

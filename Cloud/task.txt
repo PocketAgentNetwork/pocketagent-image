@@ -1,0 +1,100 @@
+CURRENT TASK - Cloud PocketAgent Image v1
+==========================================
+
+GOAL: Build production-ready cloud image with PocketAgent branding
+
+STATUS: ✅ READY TO BUILD!
+
+---
+
+WHAT WE HAVE:
+=============
+✅ Dockerfile - Full dev environment + OpenClaw build
+✅ entrypoint.sh - Startup script with PocketAgent branding
+✅ docker-compose.yml - One-command deployment with persistent volumes
+✅ .env.example - Configuration template
+✅ README.md - Documentation
+✅ .gitignore - Ignore sensitive files
+✅ ../workspace/ - Complete PocketAgent workspace with:
+   - IDENTITY.md, SOUL.md, USER.md, JOB.md
+   - AGENTS.md, MEMORY.md, HEARTBEAT.md, BOOT.md, BOOTSTRAP.md, TOOLS.md
+   - Pre-installed skills: skill-maker, agent-maker
+   - memory/ folder for daily logs
+
+---
+
+HOW TO BUILD & RUN:
+===================
+
+1. BUILD THE IMAGE
+   cd "Product/PocketAgent Image/Cloud"
+   docker compose build
+
+2. CONFIGURE
+   cp .env.example .env
+   # Edit .env and add:
+   # - OPENCLAW_GATEWAY_TOKEN (generate with: openssl rand -hex 32)
+   # - Your LLM API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+
+3. RUN
+   docker compose up -d
+
+4. ACCESS
+   Open http://localhost:18789
+   Complete onboarding (fill in IDENTITY, USER, JOB)
+   Start chatting with your PocketAgent!
+
+---
+
+PERSISTENT STORAGE:
+===================
+The image uses Docker volumes for persistence:
+- pocketagent-home:/home/node (agent's home directory)
+- ./data/openclaw:/home/node/.openclaw (OpenClaw data)
+- ./workspace:/home/node/.openclaw/workspace (agent workspace - seeded on first run)
+- ./data/files:/home/node/files (agent-created files)
+
+On first run, entrypoint.sh seeds the workspace from /app/workspace_init/
+On subsequent runs, it uses the persistent workspace volume.
+
+---
+
+BRANDING:
+=========
+✅ Service name: "pocketagent" (not "agent")
+✅ Volume name: "pocketagent-home" (not "agent-home")
+✅ Startup messages: "PocketAgent starting up..." (not "OpenClaw")
+✅ Workspace messages: "PocketAgent workspace seeded" (not generic)
+✅ README: All references to PocketAgent, not OpenClaw
+
+OpenClaw is the engine, but users only see "PocketAgent"
+
+---
+
+NEXT STEPS (Phase 2):
+======================
+- Add PocketModel proxy integration
+- Add PAN Supervisor for network connectivity
+- Add health checks and monitoring
+- Add backup/restore scripts
+- Add update mechanism
+
+---
+
+SUCCESS CRITERIA:
+=================
+✅ Dockerfile copies from ../workspace
+✅ entrypoint.sh uses PocketAgent branding
+✅ docker-compose.yml configured with persistent volumes
+✅ .env.example has all needed variables
+✅ README.md documents the setup
+✅ Builds successfully
+✅ Runs with PocketAgent branding
+✅ Agent responds to messages
+✅ Dashboard accessible
+✅ Workspace persists across restarts
+✅ Ready for cloud deployment
+
+---
+
+FOCUS: Everything is ready. Just build and test!

@@ -1,0 +1,170 @@
+LOCAL POCKETAGENT IMAGE - Build Plan
+======================================
+
+GOAL: Build the PocketAgent Image for local deployment on Mac
+(The installer will come later - it just delivers this image)
+
+NAMING CONVENTIONS (from PAN Naming Guide):
+============================================
+- Product: PocketAgent Image
+- Service: pocketagent-daemon
+- Runtime Location: /Applications/PocketAgent/
+- Process Manager: PAN Supervisor
+- User sees: "PocketAgent" (never OpenClaw, PocketModel, etc.)
+- Internal components: OpenClaw, PocketModel (hidden)
+
+KEY INSIGHT - WHAT OPENCLAW REALLY IS:
+======================================
+OpenClaw is a self-hosted AI agent gateway/framework that:
+
+✅ Connects to multiple messaging channels (WhatsApp, Telegram, Discord, Slack, iMessage, Signal, etc.)
+✅ Routes messages to AI models (Claude, GPT, Gemini, etc.)
+✅ Has persistent memory across sessions
+✅ Supports skills/plugins (extensible tools)
+✅ Runs 24/7 as a local service
+✅ Has session management and routing
+✅ Privacy-first, local architecture
+✅ Includes voice interaction capabilities
+✅ Has a web dashboard/control UI
+✅ Runs on Node.js (22+)
+
+WHAT WE'RE ADDING TO MAKE POCKETAGENT:
+=======================================
+
+1. POCKETMODEL (Our Smart Routing Layer)
+   - Intelligent model selection (not just routing to one model)
+   - Cost optimization across providers
+   - Token budget management
+   - Fallback strategies
+   - Caching layer
+
+2. PAN SUPERVISOR (Our Management Layer)
+   - Manages OpenClaw + PocketModel together
+   - Health monitoring
+   - Auto-restart and recovery
+   - Update management
+   - Branded startup/shutdown
+
+3. POCKETAGENT BRANDING & UX
+   - Consumer-friendly packaging
+   - Hide OpenClaw complexity
+   - Branded as "PocketAgent"
+   - QR code pairing with mobile client
+   - Simplified configuration
+
+4. MOBILE-FIRST CLIENT
+   - OpenClaw uses messaging apps (Telegram, WhatsApp, etc.)
+   - We're building a dedicated PocketAgent mobile app
+   - Native iOS/Android experience
+   - Activity feed, approvals, task management
+   - Better UX than messaging apps
+
+5. PAN NETWORK INTEGRATION
+   - Agent-to-agent communication
+   - Job marketplace
+   - Distributed task delegation
+
+---
+
+COMPONENTS IN IMAGE:
+====================
+
+1. OPENCLAW (Core - open source framework)
+   ✅ Gateway/routing layer
+   ✅ Multi-channel messaging (Telegram, WhatsApp, Discord, Slack, iMessage, Signal, etc.)
+   ✅ Session management
+   ✅ Persistent memory system
+   ✅ Skills/plugins system (extensible tools)
+   ✅ Web dashboard/control UI
+   ✅ Voice interaction support
+   ✅ Runs on Node.js
+   Location: /Applications/PocketAgent/lib/openclaw/
+
+2. POCKETMODEL (Our smart routing layer)
+   - Sits between OpenClaw and AI models
+   - Intelligent model selection
+   - Cost optimization
+   - Token management
+   - Caching
+   Location: /Applications/PocketAgent/lib/pocketmodel/
+
+3. PAN SUPERVISOR (Our process manager)
+   - Manages OpenClaw + PocketModel
+   - Health monitoring
+   - Auto-restart
+   - Branded startup
+   Location: /Applications/PocketAgent/lib/supervisor/
+
+4. POCKETAGENT CONFIGS
+   - Consumer-friendly defaults
+   - PAN branding
+   - Pre-configured channels
+   - QR pairing setup
+   Location: /Applications/PocketAgent/config/
+
+---
+
+IMAGE STRUCTURE:
+================
+This is what we're building - the complete runtime environment.
+Later, an installer will deliver this to users.
+
+The image is a self-contained package with:
+- All binaries and dependencies
+- Configuration files
+- Service definitions
+- Startup scripts
+
+---
+
+STARTUP SEQUENCE (when image runs):
+===================================
+1. PAN Supervisor starts
+2. Initializes folder structure
+3. Starts OpenClaw runtime
+4. Starts PocketModel service
+5. Starts communication layer
+6. Generates QR code for pairing
+7. Waits for PocketAgent Client connection
+8. Agent becomes live
+
+---
+
+FOLDER STRUCTURE:
+=================
+/Applications/PocketAgent/
+├── bin/                    # Executables
+├── lib/
+│   ├── openclaw/          # OpenClaw framework (hidden)
+│   ├── pocketmodel/       # PocketModel service (hidden)
+│   └── supervisor/        # PAN Supervisor
+├── data/                  # Memory & storage
+│   ├── vector/
+│   └── db/
+├── connectors/            # Integration modules
+├── logs/                  # Log files
+└── config/                # Configuration files
+
+---
+
+BUILD STEPS:
+============
+1. Set up image folder structure
+2. Pull in OpenClaw (already complete with all features)
+3. Add PocketModel layer on top
+4. Build PAN Supervisor to manage both
+5. Add PocketAgent branding & configs
+6. Create startup scripts
+7. Test image on Mac
+8. Later: wrap in installer for distribution
+
+---
+
+REALITY CHECK:
+==============
+We're NOT building an agent from scratch.
+We're PACKAGING OpenClaw (which already works) with:
+- PocketModel routing layer
+- Consumer-friendly branding
+- Managed runtime environment
+- Easy deployment

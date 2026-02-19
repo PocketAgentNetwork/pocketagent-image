@@ -1,0 +1,138 @@
+CLOUD POCKETAGENT IMAGE - Build Plan
+======================================
+
+GOAL: Docker container for cloud deployment
+(You already have this working! Just organizing it properly)
+
+---
+
+WHAT WE HAVE:
+=============
+✅ Working Dockerfile with OpenClaw (hidden in /pocketagent/lib/openclaw/)
+✅ Full dev environment (build tools, Python, Chrome, etc.)
+✅ PocketAgent wrapper script at /pocketagent/bin/pocketagent
+✅ Home directory structure (/home/node) - persistent volume
+✅ Data directory (/data) - persistent volume
+✅ Logs directory (/logs) - persistent volume
+✅ Entrypoint script with PocketAgent branding
+✅ Workspace seeding from /pocketagent/workspace_init
+✅ Runs on port 18789
+✅ docker-compose.yml with all 3 persistent volumes
+
+---
+
+FOLDER STRUCTURE IN CONTAINER (PocketAgent Branded):
+====================================================
+/pocketagent/                  # PocketAgent installation ✅
+├── bin/
+│   └── pocketagent           # Branded startup script ✅
+├── lib/
+│   └── openclaw/             # OpenClaw hidden inside (built from source) ✅
+├── workspace_init/           # Workspace seed files ✅
+└── entrypoint.sh             # Startup script ✅
+
+/home/node/                    # Agent's home (persistent volume) ✅
+├── .openclaw/                # Config, memory, credentials
+│   └── workspace/            # Seeded on first run
+├── files/                    # Agent-created files
+├── .local/bin/               # Installed tools
+├── .ssh/                     # SSH keys
+└── .config/                  # Configs
+
+/data/                         # PocketAgent data (persistent volume) ✅
+├── pocketmodel/              # PocketModel data (Phase 2)
+└── pan/                      # PAN network data (Phase 2)
+
+/logs/                         # Logs (persistent volume) ✅
+├── openclaw.log
+└── pocketagent.log
+
+---
+
+WHAT TO ADD FOR POCKETAGENT BRANDING:
+======================================
+
+1. POCKETMODEL INTEGRATION
+   - Add PocketModel to the image
+   - Route OpenClaw requests through PocketModel
+   - Smart model selection
+
+2. PAN SUPERVISOR
+   - Process manager for OpenClaw + PocketModel
+   - Health monitoring
+   - Auto-restart
+
+3. BRANDING
+   - Startup messages say "PocketAgent"
+   - Logs branded as PocketAgent
+   - Hide OpenClaw from user
+
+4. PAN NETWORK
+   - Agent identity
+   - Network connectivity
+   - Job marketplace integration
+
+---
+
+DEPLOYMENT:
+===========
+- Build Docker image
+- Push to registry (Docker Hub, AWS ECR, etc.)
+- Deploy to cloud (AWS, GCP, etc.)
+- Scale as needed
+- Users connect via PocketAgent Client
+
+PERSISTENT VOLUMES (Important!):
+=================================
+These directories MUST be volumes so data survives container updates:
+
+volumes:
+  - pocketagent-home:/home/node      # Agent's home (config, memory, workspace)
+  - pocketagent-data:/data           # PocketModel & PAN data
+  - pocketagent-logs:/logs           # Logs
+
+When you update the image:
+- New code in /pocketagent/ (replaced)
+- User data in volumes (persists)
+- Agent memory intact
+- No data loss
+
+DOCKER COMPOSE EXAMPLE:
+=======================
+version: '3.8'
+services:
+  pocketagent:
+    image: your-registry/pocketagent:latest
+    ports:
+      - "18789:18789"
+    volumes:
+      - pocketagent-home:/home/node
+      - pocketagent-data:/data
+      - pocketagent-logs:/logs
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+
+volumes:
+  pocketagent-home:
+  pocketagent-data:
+  pocketagent-logs:
+
+UPDATE PROCESS:
+===============
+1. Build new image: docker build -t pocketagent:v1.2.0 .
+2. Push to registry: docker push your-registry/pocketagent:v1.2.0
+3. Update compose file with new version
+4. Pull and restart: docker-compose pull && docker-compose up -d
+5. Volumes persist → user data safe → agent continues working
+
+---
+
+NEXT STEPS:
+===========
+1. Take existing Dockerfile
+2. Add PocketModel layer
+3. Add PAN Supervisor
+4. Add branding
+5. Test
+6. Deploy

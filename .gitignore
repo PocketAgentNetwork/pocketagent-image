@@ -1,0 +1,60 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# Docker volumes and data
+data/
+volumes/
+*.db
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# Agent workspace (user data)
+workspace/memory/*.json
+workspace/memory/*.md
+!workspace/memory/.gitkeep
+
+# OpenClaw data
+.openclaw/
+openclaw-data/
+
+# Build artifacts
+dist/
+build/
+*.tar
+*.tar.gz
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# SSH keys and credentials
+*.pem
+*.key
+*.crt
+id_rsa*
+credentials/
+
+# Node modules (if any)
+node_modules/
+
+# Python cache (if any)
+__pycache__/
+*.pyc
+*.pyo
+.Python

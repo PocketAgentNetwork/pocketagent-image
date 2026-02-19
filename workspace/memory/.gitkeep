@@ -1,0 +1,7 @@
+# memory/ folder
+
+This folder stores daily memory logs.
+
+Each day gets its own file: YYYY-MM-DD.md
+
+The agent reads today + yesterday on session start for recent context.

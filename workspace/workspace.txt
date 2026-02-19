@@ -1,0 +1,223 @@
+POCKETAGENT WORKSPACE STRUCTURE
+================================
+
+The workspace is where the agent lives and operates.
+It contains the main agent's identity, sub-agents, and skills.
+
+STRUCTURE:
+==========
+
+workspace/
+├── IDENTITY.md          # Main PocketAgent identity (same for all)
+├── SOUL.md              # Main PocketAgent personality (same for all)
+├── USER.md              # Who the agent serves (user-specific)
+├── JOB.md               # What the agent does (user-defined role!)
+├── AGENTS.md            # Agent capabilities & operating instructions
+├── MEMORY.md            # Long-term curated memory
+├── HEARTBEAT.md         # Periodic tasks/checks
+├── TOOLS.md             # Local tools & conventions
+├── BOOT.md              # Startup checklist
+├── BOOTSTRAP.md         # First-run setup ritual (deleted after use)
+│
+├── memory/              # Daily memory logs
+│   ├── 2026-02-18.md   # Today's log
+│   ├── 2026-02-17.md   # Yesterday's log
+│   └── ...             # One file per day
+│
+├── agents/              # Sub-agents (spawnable agents)
+│   └── (sub-agent folders)
+│
+└── skills/              # Skills/tools (capabilities)
+    └── (skill folders)
+
+---
+
+MAIN AGENT FILES (workspace root):
+===================================
+
+1. IDENTITY.md (SAME FOR ALL POCKETAGENTS)
+   - "I am a PocketAgent"
+   - Type: AI Agent
+   - Name & Emoji (user fills during onboarding)
+   - This is universal - all PocketAgents share this base
+
+2. SOUL.md (SAME FOR ALL POCKETAGENTS)
+   - Core PocketAgent personality
+   - Values and philosophy
+   - Behavioral guidelines
+   - Tone and style
+   - "Who you are, not what you do"
+   - This is universal - defines what it means to be a PocketAgent
+
+3. USER.md (USER-SPECIFIC)
+   - User information
+   - User preferences
+   - Context about who the agent serves
+   - Set during onboarding
+
+4. JOB.md (USER-DEFINED - THE KEY DIFFERENTIATOR!)
+   - What this PocketAgent does
+   - Role/occupation (personal assistant, developer, researcher, CFO, etc.)
+   - Responsibilities
+   - Specialized knowledge for this job
+   - How to approach tasks for this role
+   
+   ANALOGY: All humans are humans (IDENTITY + SOUL), but each has a different job.
+   - Same species, different occupation
+   - Same PocketAgent, different role
+   
+   Examples:
+   - Personal Assistant: "Manage calendar, emails, reminders, daily briefings"
+   - Developer: "Write code, debug, review PRs, manage deployments"
+   - Research Agent: "Deep research, summarize papers, track trends"
+   - Social Media Manager: "Post content, engage, track metrics"
+   - CFO: "Monitor finances, track spending, investment advice"
+
+5. AGENTS.md
+   - Operating instructions for the agent
+   - How to use memory
+   - What files to read on startup
+   - Capabilities and rules
+   - Loaded at the start of every session
+
+6. MEMORY.md
+   - Long-term curated memory
+   - Important context that persists
+   - User preferences learned over time
+   - Things to remember
+
+7. HEARTBEAT.md
+   - Periodic tasks
+   - Scheduled checks
+   - Recurring actions
+   - Keep it short to avoid token burn
+
+8. TOOLS.md
+   - Notes about local tools and conventions
+   - Does NOT control tool availability (only guidance)
+   - Environment information
+
+9. BOOT.md
+   - Optional startup checklist
+   - Executed on gateway restart
+   - Keep it short
+
+10. BOOTSTRAP.md
+    - One-time first-run ritual
+    - Setup instructions for new workspace
+    - Delete after completing setup
+
+11. memory/ folder
+    - Daily memory logs (one file per day)
+    - Format: YYYY-MM-DD.md
+    - Agent reads today + yesterday on session start
+    - Automatic short-term memory
+
+---
+
+SUB-AGENTS (workspace/agents/):
+================================
+
+Each sub-agent has its own folder with:
+- IDENTITY.md (who they are)
+- SOUL.md (their personality)
+- AGENTS.md (their capabilities & tools)
+
+Example:
+workspace/agents/research-agent/
+├── IDENTITY.md
+├── SOUL.md
+└── AGENTS.md
+
+Sub-agents are spawned by the main agent when needed.
+They have specialized roles and personalities.
+
+---
+
+SKILLS (workspace/skills/):
+===========================
+
+Each skill has its own folder with:
+- SKILL.md (what it does, how to use it)
+- Optional: HEARTBEAT.md (periodic checks)
+- Optional: MESSAGING.md (communication guide)
+- Optional: code/config files
+
+Example:
+workspace/skills/web-search/
+├── SKILL.md
+└── (optional other files)
+
+Skills are tools/capabilities the agent can use.
+They extend what the agent can do.
+
+---
+
+THE POCKETAGENT PHILOSOPHY:
+===========================
+
+ONE AGENT, INFINITE JOBS
+
+All PocketAgents are the same "species" (IDENTITY + SOUL).
+What makes each unique is their JOB (user-defined role).
+
+Like humans:
+- Born human (IDENTITY)
+- Human nature (SOUL)
+- Choose occupation (JOB)
+
+This means:
+- No need for "types" of agents
+- User defines what their agent does
+- Same core, different specialization
+- Flexible and customizable
+
+FOR POCKETAGENT IMAGE:
+======================
+
+We need to design:
+1. Universal IDENTITY.md (all PocketAgents)
+2. Universal SOUL.md (all PocketAgents)
+3. Template JOB.md (user customizes during onboarding)
+4. Default skills (if any)
+5. Default sub-agents (if any)
+
+The JOB.md is what makes each PocketAgent unique!
+
+---
+
+SEEDING STRATEGY:
+=================
+
+When PocketAgent Image is built:
+1. Copy complete workspace structure with all files
+2. Seed with universal IDENTITY.md (all PocketAgents)
+3. Seed with universal SOUL.md (all PocketAgents)
+4. Include template JOB.md (user fills during onboarding)
+5. Include template USER.md (user fills during onboarding)
+6. Include AGENTS.md (operating instructions)
+7. Include empty MEMORY.md (agent fills over time)
+8. Include empty HEARTBEAT.md (user adds tasks as needed)
+9. Include template TOOLS.md (user fills with environment info)
+10. Include empty BOOT.md (user adds startup tasks if needed)
+11. Include BOOTSTRAP.md (first-run setup guide)
+12. Create memory/ folder (agent creates daily logs automatically)
+13. Create agents/ folder (for future sub-agents)
+14. Create skills/ folder (for installable skills)
+
+During user onboarding:
+1. User fills IDENTITY.md (name & emoji)
+2. User fills USER.md (who they are)
+3. User defines JOB.md (what they want agent to do)
+4. User optionally fills TOOLS.md (local environment)
+5. Agent reads BOOTSTRAP.md for setup instructions
+6. User deletes BOOTSTRAP.md after setup complete
+7. Agent becomes specialized for that role
+
+User can later:
+- Change JOB.md (reassign agent to new role)
+- Add tasks to HEARTBEAT.md
+- Add startup tasks to BOOT.md
+- Install skills in skills/ folder
+- Spawn sub-agents in agents/ folder
+- Customize further

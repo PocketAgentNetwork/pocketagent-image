@@ -1,0 +1,117 @@
+CURRENT TASK - Local PocketAgent Image v1
+==========================================
+
+GOAL: Get OpenClaw running under PocketAgent branding on Mac
+
+SCOPE: Just OpenClaw for now, branded as PocketAgent
+- Install OpenClaw
+- Wrap it in PocketAgent branding
+- Make it run as "PocketAgent" service
+- User never sees "OpenClaw" anywhere
+
+---
+
+WHAT WE'RE BUILDING:
+====================
+
+A folder structure that:
+1. Contains OpenClaw (hidden inside)
+2. Runs as "PocketAgent" 
+3. All branding is PocketAgent
+4. User interacts with "PocketAgent", not "OpenClaw"
+
+---
+
+STEPS:
+======
+
+1. CREATE FOLDER STRUCTURE
+   /Applications/PocketAgent/
+   ├── bin/                    # PocketAgent executables
+   │   └── pocketagent        # Main startup script
+   ├── lib/
+   │   └── openclaw/          # OpenClaw installation (cloned & built)
+   ├── home/                  # Agent's home directory (like /home/node in cloud)
+   │   ├── .openclaw/        # OpenClaw config dir
+   │   │   ├── memory/       # Agent memory
+   │   │   ├── openclaw.json # OpenClaw configuration
+   │   │   └── credentials/  # API keys, tokens
+   │   ├── files/            # Workspace (agent's working files)
+   │   ├── .local/
+   │   │   └── bin/          # Tools agent installs
+   │   ├── .ssh/             # SSH keys
+   │   └── .config/          # Other configs
+   ├── data/                  # PocketAgent-managed data
+   │   ├── pocketmodel/       # PocketModel data (later)
+   │   └── pan/               # PAN network data (later)
+   └── logs/                  # All logs
+       ├── openclaw.log
+       └── pocketagent.log
+
+2. INSTALL OPENCLAW
+   - Clone OpenClaw repo into lib/openclaw/
+   - Install dependencies (Node 22+, pnpm)
+   - Build OpenClaw (pnpm build)
+   - Set HOME=/Applications/PocketAgent/home when running
+   - OpenClaw will automatically use:
+     * Config: $HOME/.openclaw/
+     * Workspace: $HOME/files/
+   - Test it runs
+
+3. CREATE POCKETAGENT WRAPPER
+   - bin/pocketagent script that:
+     * Sets HOME=/Applications/PocketAgent/home
+     * Starts OpenClaw from lib/openclaw/
+     * Branded startup messages
+     * All logs say "PocketAgent" not "OpenClaw"
+
+4. CREATE STARTUP SCRIPT
+   - Script to start PocketAgent on Mac
+   - Could be launchd daemon later
+   - For now, just a simple start script
+
+5. TEST
+   - Run ./bin/pocketagent
+   - Should start OpenClaw under the hood
+   - Access web dashboard
+   - Send message, get response
+   - Everything branded as PocketAgent
+
+---
+
+SUCCESS CRITERIA:
+=================
+✅ OpenClaw installed in /Applications/PocketAgent/lib/openclaw/
+✅ Home dir at /Applications/PocketAgent/home/ (contains .openclaw, files, etc.)
+✅ Can run: pocketagent start
+✅ Agent responds to messages
+✅ User only sees "PocketAgent" branding
+✅ OpenClaw is completely hidden
+
+---
+
+STORAGE NOTES (matches cloud setup):
+=====================================
+We set HOME=/Applications/PocketAgent/home when running OpenClaw.
+OpenClaw then automatically uses:
+- $HOME/.openclaw/ → config, memory, credentials
+- $HOME/files/ → workspace (agent's working files)
+- $HOME/.local/bin/ → tools agent installs
+- $HOME/.ssh/ → SSH keys
+- $HOME/.config/ → other configs
+
+This matches the proven cloud Docker setup exactly!
+
+---
+
+LATER (NOT NOW):
+================
+- PocketModel integration
+- PAN Supervisor
+- Client [Web, Mobile, Desktop]
+- QR pairing
+- Installer packaging
+
+---
+
+FOCUS: Just get OpenClaw running as "PocketAgent" first.
