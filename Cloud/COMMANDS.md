@@ -198,17 +198,34 @@ docker exec pocketagent cat /home/node/.openclaw/config.json
 
 ## 🔄 Updates & Maintenance
 
-### Update Container
+### Update PocketAgent
 ```bash
-# Pull latest code and rebuild
-cd "Product/PocketAgent Image/Cloud"
-git pull
-docker compose down
-docker compose up --build -d
+# Pull latest image from registry
+docker compose pull
 
-# Or force rebuild without cache
-docker compose build --no-cache
+# Restart with new image
+docker compose down
 docker compose up -d
+
+# Your data persists! (volumes are preserved)
+```
+
+**To update to specific version:**
+```bash
+# Edit .env file
+nano .env
+
+# Change version
+POCKETAGENT_VERSION=0.0.2
+
+# Pull and restart
+docker compose pull
+docker compose up -d
+```
+
+**Check current version:**
+```bash
+docker inspect pocketagent | grep -i version
 ```
 
 ### Clean Up
