@@ -6,22 +6,25 @@ Works on: Mac, Linux, Windows (native, not Docker)
 
 ---
 
-## DEPLOYMENT OPTIONS
+## INSTALLER VERSIONS
 
-### Phase 1: NATIVE INSTALLATION (Current Focus)
-- Direct installation on user's machine
-- OS-specific paths and integration
-- Feels like a "real app"
-- Better UX, system integration
-- No Docker required
+### Version 0.x: Shell Script Installer (Current Focus)
+- One-line install: `curl -fsSL https://install.pocketagent.com | bash`
+- Terminal-based, no GUI
+- Quick to build and test
+- Works on Mac/Linux
+- For developers and early adopters
 
-### Phase 2: DOCKER FOR LOCAL (Later)
-- Same Docker image as Cloud
-- Just bind to localhost instead of 0.0.0.0
-- Easy fallback for users who prefer Docker
-- Cross-platform without OS-specific code
+### Version 1.x: Native GUI Installer (Future)
+- **Mac**: `.dmg` or `.pkg` with GUI
+- **Windows**: `.exe` or `.msi` installer
+- **Linux**: `.deb`, `.rpm`, or AppImage
+- Double-click to install
+- Progress bars, nice UX
+- For mainstream users
+- Script runs under the hood (same logic, better wrapper)
 
-**This plan focuses on Phase 1 (Native)**
+**Yes, it's totally possible!** The GUI installer just wraps the script with a nice interface.
 
 ---
 
@@ -347,13 +350,24 @@ echo "Open: http://localhost:18789"
 
 ## FUTURE ENHANCEMENTS
 
+### Version 1.x: GUI Installer
+- Mac: `.dmg` with drag-to-Applications
+- Windows: `.exe` with wizard
+- Linux: `.deb`/`.rpm` packages
+- Same script logic, wrapped in GUI
+
+### Version 2.x: Additional Features
 - PocketModel integration
 - PAN Supervisor
 - Menu bar/system tray app
 - Desktop notifications
 - Auto-updates
-- Docker option for easy deployment
+
+### Alternative: Docker for Local
+- Same Docker image as Cloud
+- Bind to localhost instead of 0.0.0.0
+- Easy fallback for Docker users
 
 ---
 
-**CURRENT FOCUS:** Build the basic native installation for Mac/Linux first!
+**CURRENT FOCUS:** Build the shell script installer (v0.x) for Mac/Linux first!
