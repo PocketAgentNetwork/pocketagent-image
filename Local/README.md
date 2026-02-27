@@ -104,6 +104,9 @@ pocketagent start
 # Stop agent
 pocketagent stop
 
+# Update to latest OpenClaw
+pocketagent update
+
 # View logs
 pocketagent logs
 ```
@@ -112,6 +115,25 @@ pocketagent logs
 ```
 http://localhost:18789
 ```
+
+---
+
+## 🔄 Updating
+
+When OpenClaw releases updates:
+
+```bash
+pocketagent update
+```
+
+This will:
+1. Stop your agent
+2. Backup current version
+3. Download latest OpenClaw
+4. Rebuild everything
+5. Restart your agent
+
+**Your data is safe!** All settings, memory, and workspace files are preserved.
 
 ---
 
