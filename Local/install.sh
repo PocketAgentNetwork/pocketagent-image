@@ -131,6 +131,43 @@ update_workspace() {
         echo "    ✓ Updated $file"
     done
     
+    # ⭐ NEW: Sync new skills and agents (don't overwrite existing)
+    echo "  Syncing new skills and agents..."
+    
+    # Download and sync skills
+    local temp_workspace="/tmp/pocketagent-workspace-$$"
+    mkdir -p "$temp_workspace"
+    download_workspace "$temp_workspace"
+    
+    # Copy new skills (only if they don't exist)
+    if [ -d "$temp_workspace/skills" ]; then
+        for skill_dir in "$temp_workspace/skills"/*; do
+            if [ -d "$skill_dir" ]; then
+                skill_name=$(basename "$skill_dir")
+                if [ ! -d "$workspace_dir/skills/$skill_name" ]; then
+                    cp -r "$skill_dir" "$workspace_dir/skills/"
+                    echo "    ✓ Added new skill: $skill_name"
+                fi
+            fi
+        done
+    fi
+    
+    # Copy new agents (only if they don't exist)
+    if [ -d "$temp_workspace/agents" ]; then
+        for agent_file in "$temp_workspace/agents"/*; do
+            if [ -f "$agent_file" ]; then
+                agent_name=$(basename "$agent_file")
+                if [ ! -f "$workspace_dir/agents/$agent_name" ]; then
+                    cp "$agent_file" "$workspace_dir/agents/"
+                    echo "    ✓ Added new agent: $agent_name"
+                fi
+            fi
+        done
+    fi
+    
+    # Cleanup
+    rm -rf "$temp_workspace"
+    
     # Update version file
     echo "$latest_version" > "$WORKSPACE_VERSION_FILE"
     
