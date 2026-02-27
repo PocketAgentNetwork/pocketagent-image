@@ -141,11 +141,11 @@ RUN mkdir -p /home/node/.openclaw \
 ENV PATH="/home/node/.local/bin:/home/node/.cargo/bin:${PATH}"
 
 # ── Startup script ──
-COPY entrypoint.sh /pocketagent/entrypoint.sh
+COPY Cloud/entrypoint.sh /pocketagent/entrypoint.sh
 RUN chmod +x /pocketagent/entrypoint.sh
 
 # ── Bake PocketAgent workspace into image (for seeding) ──
-COPY ../workspace /pocketagent/workspace_init
+COPY workspace /pocketagent/workspace_init
 
 # ── Set ownership ──
 RUN chown -R node:node /pocketagent /data /logs /home/node
