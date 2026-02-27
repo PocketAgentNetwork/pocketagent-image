@@ -1,8 +1,43 @@
-# 📟 PocketAgent Docker Commands Cheat Sheet
+# 📟 PocketAgent Commands Cheat Sheet
 
-Quick reference for managing PocketAgent containers via SSH.
+Quick reference for managing PocketAgent on your VPS.
 
 ---
+
+## 📟 PocketAgent Commands (User-Facing)
+
+These commands use the `pocketagent` alias (no Docker knowledge needed).
+
+**Setup alias first:**
+```bash
+# The setup.sh script adds this automatically, or add manually:
+alias pocketagent="docker exec -it pocketagent node /pocketagent/lib/openclaw/dist/index.js"
+
+# Reload shell
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+### Agent Management
+```bash
+# Check model status
+pocketagent models status
+
+# Switch models
+pocketagent model kimi
+pocketagent model minimax
+
+# Run diagnostics
+pocketagent doctor --fix
+
+# View help
+pocketagent --help
+```
+
+---
+
+## 🐳 Docker Management (Infrastructure)
+
+These commands manage the Docker container itself.
 
 ## 📦 Container Management
 
