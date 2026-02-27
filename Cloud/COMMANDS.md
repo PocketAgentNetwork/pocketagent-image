@@ -22,15 +22,52 @@ source ~/.bashrc  # or source ~/.zshrc
 # Check model status
 pocketagent models status
 
-# Switch models
-pocketagent model kimi
-pocketagent model minimax
+# List available models
+pocketagent models list
+
+# Switch to specific model
+pocketagent models use kimi-k2.5:cloud
+pocketagent models use minimax-m2.5:cloud
+
+# Set primary and fallback models
+pocketagent models set-primary kimi-k2.5:cloud
+pocketagent models set-fallback minimax-m2.5:cloud
 
 # Run diagnostics
+pocketagent doctor
 pocketagent doctor --fix
+
+# Check agent health
+pocketagent health
+
+# View configuration
+pocketagent config show
+pocketagent config get <key>
+pocketagent config set <key> <value>
+
+# Manage workspace
+pocketagent workspace info
+pocketagent workspace backup
+pocketagent workspace restore <backup-file>
+
+# View logs
+pocketagent logs
+pocketagent logs --tail 100
+pocketagent logs --follow
+
+# Manage skills
+pocketagent skills list
+pocketagent skills enable <skill-name>
+pocketagent skills disable <skill-name>
+
+# Manage integrations
+pocketagent integrations list
+pocketagent integrations add <integration-name>
+pocketagent integrations remove <integration-name>
 
 # View help
 pocketagent --help
+pocketagent <command> --help
 ```
 
 ---
