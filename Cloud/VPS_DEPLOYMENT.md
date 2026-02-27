@@ -96,10 +96,10 @@ sudo ufw status
 **Option A: Quick Install (Recommended)**
 
 ```bash
-# One-liner installer
+# One-liner installer (creates pocketagent/ directory)
 curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/install.sh | bash
 
-# Navigate to directory
+# Enter the directory
 cd pocketagent
 ```
 

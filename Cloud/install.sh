@@ -15,16 +15,19 @@ curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-imag
 curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/setup.sh -o setup.sh
 chmod +x setup.sh
 
-echo "✅ Files downloaded!"
+echo "✅ Files downloaded to ./pocketagent/"
 echo ""
 echo "📋 Next steps:"
 echo ""
-echo "1. Run setup:"
+echo "1. Enter directory:"
+echo "   cd pocketagent"
+echo ""
+echo "2. Run setup:"
 echo "   ./setup.sh"
 echo ""
-echo "2. Start PocketAgent:"
+echo "3. Start PocketAgent:"
 echo "   docker compose up -d"
 echo ""
-echo "3. Open in browser:"
+echo "4. Open in browser:"
 echo "   http://localhost:18789"
 echo ""
