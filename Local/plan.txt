@@ -239,8 +239,38 @@ case "$1" in
   status)
     pgrep -f "openclaw.*gateway" > /dev/null && echo "Running" || echo "Stopped"
     ;;
+  update)
+    echo "📟 Updating PocketAgent..."
+    
+    # Stop agent
+    pkill -f "openclaw.*gateway"
+    
+    # Backup current OpenClaw
+    if [ -d "$OPENCLAW_PATH" ]; then
+      echo "  Backing up current version..."
+      mv "$OPENCLAW_PATH" "$POCKETAGENT_ROOT/lib/openclaw.backup.$(date +%Y%m%d)"
+    fi
+    
+    # Pull latest OpenClaw
+    echo "  Downloading latest OpenClaw..."
+    cd "$POCKETAGENT_ROOT/lib"
+    git clone https://github.com/openclaw/openclaw.git openclaw
+    cd openclaw
+    
+    # Build
+    echo "  Building..."
+    pnpm install
+    pnpm build
+    
+    # Restart
+    echo "  Restarting agent..."
+    "$POCKETAGENT_ROOT/bin/pocketagent" start &
+    
+    echo "✅ Updated to latest OpenClaw!"
+    echo "   Your data and settings are preserved."
+    ;;
   *)
-    echo "Usage: pocketagent {start|stop|status}"
+    echo "Usage: pocketagent {start|stop|status|update}"
     exit 1
     ;;
 esac
