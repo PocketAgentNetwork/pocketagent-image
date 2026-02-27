@@ -136,9 +136,18 @@ case "$1" in
             exit 1
         fi
         
+        cd openclaw
+        
+        # Get latest release tag
+        LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "main")
+        echo "  Using OpenClaw version: $LATEST_RELEASE"
+        git checkout "$LATEST_RELEASE"
+        
+        # Save version info
+        echo "$LATEST_RELEASE" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
+        
         # Build
         echo "  Building OpenClaw..."
-        cd openclaw
         if ! pnpm install; then
             echo "❌ Failed to install dependencies"
             exit 1

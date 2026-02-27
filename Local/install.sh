@@ -211,8 +211,19 @@ cmd_install() {
     if [ -d "openclaw" ]; then
         rm -rf openclaw
     fi
+    
+    # Clone and checkout latest release
     git clone https://github.com/openclaw/openclaw.git openclaw
     cd openclaw
+    
+    # Get latest release tag
+    LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "main")
+    echo "  Using OpenClaw version: $LATEST_RELEASE"
+    git checkout "$LATEST_RELEASE"
+    
+    # Save version info
+    echo "$LATEST_RELEASE" > "$INSTALL_DIR/OPENCLAW_VERSION"
+    
     pnpm install
     pnpm build
     
