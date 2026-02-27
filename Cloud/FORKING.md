@@ -125,6 +125,57 @@ The official images get updates to:
 
 ---
 
+## Private Repos & Container Registry
+
+**If your repo is private:**
+
+The container registry (ghcr.io) will also be private by default. You have 3 options:
+
+### Option 1: Make Container Package Public (Recommended)
+
+Even with a private repo, you can make the container image public:
+
+1. Go to: `https://github.com/yourusername?tab=packages`
+2. Click on `pocketagent-image`
+3. Package settings → Change visibility → Public
+
+Now anyone can pull without authentication!
+
+### Option 2: Authenticate to Pull
+
+Users need to login before pulling:
+
+```bash
+# Create GitHub Personal Access Token with read:packages scope
+# At: https://github.com/settings/tokens
+
+# Login to registry
+echo YOUR_TOKEN | docker login ghcr.io -u yourusername --password-stdin
+
+# Now pull works
+docker compose pull
+docker compose up -d
+```
+
+### Option 3: Build Locally
+
+Skip the registry entirely:
+
+```yaml
+# In docker-compose.yml
+services:
+  pocketagent:
+    build: .  # Build from Dockerfile
+    # image: ghcr.io/...  # Comment this out
+```
+
+Then:
+```bash
+docker compose up --build -d
+```
+
+---
+
 ## Staying Updated
 
 If you want to merge updates from the official repo:

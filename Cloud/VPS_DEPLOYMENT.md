@@ -419,6 +419,24 @@ This lets you run OpenClaw commands directly without typing the full docker exec
 
 ## Troubleshooting
 
+### Can't pull image (private registry)
+
+If you're using a private fork and can't pull the image:
+
+```bash
+# Option 1: Make your container package public
+# Go to: https://github.com/yourusername?tab=packages
+# Click package → Settings → Change visibility → Public
+
+# Option 2: Login to registry
+echo YOUR_GITHUB_TOKEN | docker login ghcr.io -u yourusername --password-stdin
+docker compose pull
+
+# Option 3: Build locally instead
+# Edit docker-compose.yml and uncomment: build: .
+docker compose up --build -d
+```
+
 ### Can't access on port 18789
 
 ```bash
