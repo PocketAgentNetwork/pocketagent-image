@@ -1,8 +1,9 @@
 services:
   pocketagent:
-    image: ghcr.io/pocketagentnetwork/pocketagent-image:${POCKETAGENT_VERSION:-latest}
-    # For local development, uncomment to build instead:
+    image: ${POCKETAGENT_IMAGE:-ghcr.io/pocketagentnetwork/pocketagent-image}:${POCKETAGENT_VERSION:-latest}
+    # For local development/custom builds, uncomment to build instead:
     # build: .
+    # Or set POCKETAGENT_IMAGE in .env to use your own registry
     container_name: ${CONTAINER_NAME:-pocketagent}
     hostname: ${CONTAINER_NAME:-pocketagent}
     restart: unless-stopped

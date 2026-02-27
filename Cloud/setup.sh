@@ -30,6 +30,10 @@ cat > .env << EOF
 # PocketAgent Cloud Container Configuration
 # Generated: $(date)
 
+# Image Configuration (optional - defaults to official PocketAgent image)
+# POCKETAGENT_IMAGE=ghcr.io/yourusername/pocketagent-image
+POCKETAGENT_VERSION=latest
+
 # Gateway Configuration
 OPENCLAW_GATEWAY_TOKEN=$TOKEN
 OPENCLAW_GATEWAY_PORT=18789
