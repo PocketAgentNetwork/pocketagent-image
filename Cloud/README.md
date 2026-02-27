@@ -36,7 +36,9 @@ This cloud image serves two use cases:
    ↓
 5. User completes onboarding in client:
    - Agent name and identity
-   - API keys (OpenAI, Anthropic, etc.)
+   - API keys:
+     • Ollama Cloud (Recommended - No GPU needed)
+     • OpenAI, Anthropic, Google, etc.
    - Optional integrations
    ↓
 6. Client sends config to container
