@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🤖 PocketAgent starting up..."
+echo "📟 PocketAgent starting up..."
 
 # ── Ensure directory structure exists ──
 mkdir -p /home/node/.openclaw/workspace

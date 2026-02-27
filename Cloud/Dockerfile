@@ -1,7 +1,7 @@
 FROM node:22-bookworm
 
 # ══════════════════════════════════════════════════════════════
-# 🤖 POCKETAGENT CLOUD IMAGE
+# 📟 POCKETAGENT CLOUD IMAGE
 # ══════════════════════════════════════════════════════════════
 # Full-featured AI agent environment with:
 # - Node.js + Python runtimes

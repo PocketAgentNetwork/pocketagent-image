@@ -1,4 +1,4 @@
-# 🤖 PocketAgent (Cloud Image)
+# 📟 PocketAgent (Cloud Image)
 
 Production-ready cloud deployment image for PocketAgent. This image is used by PAN infrastructure to provision user containers automatically.
 

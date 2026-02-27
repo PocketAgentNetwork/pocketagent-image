@@ -1,4 +1,4 @@
-# PocketAgent VPS Deployment Walkthrough
+# 📟 PocketAgent VPS Deployment Walkthrough
 
 Complete step-by-step guide to deploy PocketAgent on a VPS (DigitalOcean, AWS, Linode, etc.)
 

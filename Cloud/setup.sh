@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "🤖 PocketAgent Cloud Container Setup"
+echo "📟 PocketAgent Cloud Container Setup"
 echo "====================================="
 echo ""
 

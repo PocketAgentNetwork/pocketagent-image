@@ -1,4 +1,4 @@
-# Ollama Cloud Integration for PocketAgent
+# Ollama Cloud Integration for 📟 PocketAgent
 
 ## What is Ollama Cloud?
 

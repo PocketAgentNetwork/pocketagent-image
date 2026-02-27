@@ -1,4 +1,4 @@
-# 🚀 PocketAgent Docker Commands Cheat Sheet
+# 📟 PocketAgent Docker Commands Cheat Sheet
 
 Quick reference for managing PocketAgent containers via SSH.
 
