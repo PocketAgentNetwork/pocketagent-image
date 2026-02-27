@@ -133,16 +133,29 @@ C:\Users\{username}\AppData\Local\PocketAgent\
 
 ## INSTALLATION FLOW
 
-### Step 1: Prerequisites Check
+### Step 1: Personalization Questions ⭐ NEW!
+**Installer asks user:**
+- "What's your name?" → Updates USER.md
+- "What should your agent be called?" → Updates IDENTITY.md (default: PocketAgent)
+- "What's your timezone?" → Updates USER.md
+- "What's your preferred language?" → Updates USER.md (default: English)
+
+**Why this matters:**
+- Agent knows who it's serving
+- Personalized experience from day one
+- Agent addresses user by name
+- User feels ownership ("my agent Jarvis")
+
+### Step 2: Prerequisites Check
 - Node.js 22+ installed
 - pnpm installed (or install it)
 - Git installed
 
-### Step 2: Create Folder Structure
+### Step 3: Create Folder Structure
 - Create all directories
 - Set proper permissions
 
-### Step 3: Install OpenClaw
+### Step 4: Install OpenClaw
 ```bash
 cd lib/openclaw
 git clone https://github.com/openclaw/openclaw.git .
@@ -150,11 +163,22 @@ pnpm install
 pnpm build
 ```
 
-### Step 4: Copy Workspace Files
+### Step 5: Copy Workspace Files
 - Copy workspace/ to home/.openclaw/workspace/
 - Set version file
 
-### Step 5: Create Wrapper Script
+### Step 6: Personalize Workspace ⭐ NEW!
+```bash
+# Update IDENTITY.md with agent name
+sed -i "s/^- \*\*Name:\*\* .*/- **Name:** $AGENT_NAME/" IDENTITY.md
+
+# Update USER.md with user info
+sed -i "s/^\*\*Name:\*\* .*/\*\*Name:\*\* $USER_NAME/" USER.md
+sed -i "s/^\*\*Timezone:\*\* .*/\*\*Timezone:\*\* $USER_TIMEZONE/" USER.md
+sed -i "s/^\*\*Language:\*\* .*/\*\*Language:\*\* $USER_LANGUAGE/" USER.md
+```
+
+### Step 7: Create Wrapper Script
 - bin/pocketagent script
 - Sets environment variables
 - Starts OpenClaw
