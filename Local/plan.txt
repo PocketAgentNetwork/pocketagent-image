@@ -11,20 +11,37 @@ Works on: Mac, Linux, Windows (native, not Docker)
 ### Version 0.x: Shell Script Installer (Current Focus)
 - One-line install: `curl -fsSL https://install.pocketagent.com | bash`
 - Terminal-based, no GUI
+- Installs agent as background service
+- User accesses via web browser (localhost:18789)
 - Quick to build and test
-- Works on Mac/Linux
 - For developers and early adopters
 
-### Version 1.x: Native GUI Installer (Future)
-- **Mac**: `.dmg` or `.pkg` with GUI
+### Version 1.x: GUI Installer (Future)
+- **Mac**: `.dmg` or `.pkg` with GUI wizard
 - **Windows**: `.exe` or `.msi` installer
 - **Linux**: `.deb`, `.rpm`, or AppImage
 - Double-click to install
 - Progress bars, nice UX
+- Still installs agent as background service
+- User accesses via web browser or separate client app
 - For mainstream users
-- Script runs under the hood (same logic, better wrapper)
 
-**Yes, it's totally possible!** The GUI installer just wraps the script with a nice interface.
+### Version 2.x: Native App Bundle (Future - All-in-One)
+- **Installer + Client in one package!**
+- Download one app (PocketAgent.dmg / PocketAgent.exe)
+- First launch:
+  1. Installer runs → Sets up agent as background service
+  2. Client UI opens automatically
+  3. Client connects to local agent
+  4. User sees native interface immediately
+- Includes:
+  - Agent (background service)
+  - Client (native UI for chatting with agent)
+  - QR code for mobile pairing
+- Like: Slack, Discord (desktop app with built-in backend)
+- Best UX - everything just works!
+
+**Current Focus:** v0.x shell script installer
 
 ---
 
