@@ -88,12 +88,17 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# ── Install Google Chrome Stable ──
-RUN curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable && \
-    rm -rf /var/lib/apt/lists/*
+# ── Install Google Chrome Stable (amd64 only) ──
+# Chrome is not available for ARM, skip on ARM builds
+RUN if [ "$(dpkg --print-architecture)" = "amd64" ]; then \
+        curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg && \
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | tee /etc/apt/sources.list.d/google-chrome.list && \
+        apt-get update && \
+        apt-get install -y google-chrome-stable && \
+        rm -rf /var/lib/apt/lists/*; \
+    else \
+        echo "Skipping Chrome installation on ARM architecture"; \
+    fi
 
 # ── Allow the node user to sudo (install packages on the fly) ──
 RUN echo "node ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
