@@ -91,10 +91,34 @@ sudo ufw status
 
 ---
 
-## Step 5: Clone PocketAgent Repository
+## Step 5: Install PocketAgent
+
+**Option A: Quick Install (Recommended)**
 
 ```bash
-# Clone the repo
+# One-liner installer
+curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/install.sh | bash
+
+# Navigate to directory
+cd pocketagent
+```
+
+**Option B: Manual Download**
+
+```bash
+# Create directory
+mkdir pocketagent && cd pocketagent
+
+# Download files
+curl -O https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/docker-compose.yml
+curl -O https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/setup.sh
+chmod +x setup.sh
+```
+
+**Option C: Clone Full Repository**
+
+```bash
+# Clone the repo (if you want to customize workspace files)
 git clone https://github.com/PocketAgentNetwork/pocketagent-image.git
 
 # Navigate to Cloud directory
@@ -106,8 +130,9 @@ cd pocketagent-image/Cloud
 ## Step 6: Run Setup Script
 
 ```bash
-# Make setup script executable
-chmod +x setup.sh
+# Run setup (generates gateway token)
+./setup.sh
+```
 
 # Run setup (generates gateway token)
 ./setup.sh
