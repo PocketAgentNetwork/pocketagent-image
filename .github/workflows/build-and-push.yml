@@ -69,6 +69,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            OPENCLAW_VERSION=v2026.2.26
 
       - name: Generate deployment instructions
         run: |
