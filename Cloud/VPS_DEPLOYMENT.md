@@ -116,7 +116,7 @@ chmod +x setup.sh
 **What this does:**
 - Generates a secure gateway token
 - Creates `.env` file
-- Sets up CLI alias
+- Adds `pocketagent` CLI alias to your shell (~/.bashrc or ~/.zshrc)
 
 **Output:**
 ```
@@ -124,9 +124,20 @@ chmod +x setup.sh
    abc123def456...
    
    Keep this secret! You'll need it to connect your client.
+
+✅ Added alias to ~/.bashrc
+
+📋 Next Steps:
+1. Start PocketAgent:
+   docker compose up --build -d
+
+2. Reload your shell to use 'pocketagent' command:
+   source ~/.bashrc  # or source ~/.zshrc
 ```
 
 **Save this token somewhere safe!**
+
+**Note:** The alias won't work until you reload your shell (Step 14) or log out and back in.
 
 ---
 
@@ -352,18 +363,43 @@ docker stats pocketagent
 
 ---
 
-## Step 14: CLI Access (Optional)
+## Step 14: Use CLI Commands
 
-If you set up the alias during setup:
+The setup script automatically added a `pocketagent` alias to your shell.
+
+**Reload your shell to activate it:**
 
 ```bash
-# Reload shell
+# For bash users
 source ~/.bashrc
 
-# Use pocketagent CLI
-pocketagent models status
-pocketagent doctor --fix
+# For zsh users
+source ~/.zshrc
+
+# Or just log out and back in
+exit
+ssh pocketagent@your-vps-ip
 ```
+
+**Now you can use the CLI:**
+
+```bash
+# Check model status
+pocketagent models status
+
+# Run diagnostics
+pocketagent doctor --fix
+
+# List available commands
+pocketagent --help
+```
+
+**The alias is:**
+```bash
+alias pocketagent="docker exec -it pocketagent node /pocketagent/lib/openclaw/dist/index.js"
+```
+
+This lets you run OpenClaw commands directly without typing the full docker exec command!
 
 ---
 
