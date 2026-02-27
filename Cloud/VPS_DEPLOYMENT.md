@@ -457,31 +457,88 @@ docker compose up -d
 
 ## Backup & Restore
 
-### Backup
+### Create Backup on VPS
 
 ```bash
-# Backup persistent data
+# Navigate to Cloud directory
+cd ~/pocketagent-image/Cloud
+
+# Create backup with today's date
 docker run --rm \
   -v pocketagent-home:/data \
   -v $(pwd):/backup \
   ubuntu tar czf /backup/pocketagent-backup-$(date +%Y%m%d).tar.gz /data
 
-# Download to your local machine
-scp pocketagent@your-vps-ip:~/pocketagent-image/Cloud/pocketagent-backup-*.tar.gz .
+# Verify backup was created
+ls -lh pocketagent-backup-*.tar.gz
 ```
 
-### Restore
+**This backs up:**
+- Agent workspace (identity, soul, job, memory)
+- Installed tools and configurations
+- All persistent data
+
+### Download Backup to Local Machine
+
+**From your local machine (not VPS):**
 
 ```bash
-# Upload backup to VPS
-scp pocketagent-backup-*.tar.gz pocketagent@your-vps-ip:~/
+# Download the backup file
+scp pocketagent@your-vps-ip:~/pocketagent-image/Cloud/pocketagent-backup-*.tar.gz ~/Downloads/
 
-# Restore
+# Or specify exact date
+scp pocketagent@your-vps-ip:~/pocketagent-image/Cloud/pocketagent-backup-20260227.tar.gz ~/Downloads/
+```
+
+**Now you have a local copy!** Store it somewhere safe (external drive, cloud storage, etc.)
+
+### Restore from Backup
+
+**Upload backup to VPS (from your local machine):**
+
+```bash
+# Upload backup file
+scp ~/Downloads/pocketagent-backup-*.tar.gz pocketagent@your-vps-ip:~/
+```
+
+**On VPS, restore the backup:**
+
+```bash
+# Stop container first
+cd ~/pocketagent-image/Cloud
+docker compose down
+
+# Restore data
 docker run --rm \
   -v pocketagent-home:/data \
   -v ~/:/backup \
   ubuntu tar xzf /backup/pocketagent-backup-*.tar.gz -C /
+
+# Start container
+docker compose up -d
+
+# Check logs
+docker compose logs -f
 ```
+
+**Your agent is back with all its data!**
+
+### Automated Backups (Optional)
+
+**Set up daily backups with cron:**
+
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line (runs daily at 2 AM)
+0 2 * * * cd ~/pocketagent-image/Cloud && docker run --rm -v pocketagent-home:/data -v $(pwd):/backup ubuntu tar czf /backup/pocketagent-backup-$(date +\%Y\%m\%d).tar.gz /data
+
+# Keep only last 7 days of backups
+0 3 * * * find ~/pocketagent-image/Cloud -name "pocketagent-backup-*.tar.gz" -mtime +7 -delete
+```
+
+**Now backups happen automatically!**
 
 ---
 
