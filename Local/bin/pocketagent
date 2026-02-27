@@ -1,0 +1,238 @@
+#!/bin/bash
+# PocketAgent Wrapper Script
+# This script manages the PocketAgent service on your local machine
+
+# Detect OS and set paths
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # macOS
+    POCKETAGENT_ROOT="/Applications/PocketAgent"
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    # Linux
+    POCKETAGENT_ROOT="$HOME/.local/share/pocketagent"
+else
+    echo "❌ Unsupported OS: $OSTYPE"
+    exit 1
+fi
+
+POCKETAGENT_HOME="$POCKETAGENT_ROOT/home"
+OPENCLAW_PATH="$POCKETAGENT_ROOT/lib/openclaw"
+LOG_FILE="$POCKETAGENT_ROOT/logs/pocketagent.log"
+
+export HOME="$POCKETAGENT_HOME"
+export XDG_CONFIG_HOME="$HOME/.openclaw"
+
+# Helper function to check if agent is running
+is_running() {
+    pgrep -f "openclaw.*gateway" > /dev/null
+}
+
+# Main command handler
+case "$1" in
+    start)
+        if is_running; then
+            echo "📟 PocketAgent is already running"
+            exit 0
+        fi
+        
+        echo "📟 Starting PocketAgent..."
+        cd "$OPENCLAW_PATH"
+        nohup node dist/index.js gateway \
+            --workspace "$HOME/.openclaw/workspace" \
+            --bind "127.0.0.1" \
+            --port 18789 \
+            --allow-unconfigured \
+            >> "$LOG_FILE" 2>&1 &
+        
+        sleep 2
+        if is_running; then
+            echo "✅ PocketAgent started successfully"
+            echo "🌐 Access at: http://localhost:18789"
+        else
+            echo "❌ Failed to start PocketAgent"
+            echo "Check logs: pocketagent logs"
+            exit 1
+        fi
+        ;;
+    
+    stop)
+        if ! is_running; then
+            echo "📟 PocketAgent is not running"
+            exit 0
+        fi
+        
+        echo "📟 Stopping PocketAgent..."
+        pkill -f "openclaw.*gateway"
+        sleep 1
+        
+        if ! is_running; then
+            echo "✅ PocketAgent stopped"
+        else
+            echo "⚠️  Force stopping..."
+            pkill -9 -f "openclaw.*gateway"
+            echo "✅ PocketAgent stopped"
+        fi
+        ;;
+    
+    restart)
+        echo "📟 Restarting PocketAgent..."
+        "$0" stop
+        sleep 2
+        "$0" start
+        ;;
+    
+    status)
+        if is_running; then
+            PID=$(pgrep -f "openclaw.*gateway")
+            echo "📟 PocketAgent is running (PID: $PID)"
+            echo "🌐 Access at: http://localhost:18789"
+        else
+            echo "📟 PocketAgent is stopped"
+        fi
+        ;;
+    
+    logs)
+        if [ ! -f "$LOG_FILE" ]; then
+            echo "❌ Log file not found: $LOG_FILE"
+            exit 1
+        fi
+        
+        case "$2" in
+            --follow|-f)
+                tail -f "$LOG_FILE"
+                ;;
+            --tail)
+                tail -n "${3:-100}" "$LOG_FILE"
+                ;;
+            *)
+                tail -n 50 "$LOG_FILE"
+                ;;
+        esac
+        ;;
+    
+    update)
+        echo "📟 Updating PocketAgent..."
+        echo ""
+        
+        # Stop agent
+        if is_running; then
+            echo "  Stopping agent..."
+            "$0" stop
+        fi
+        
+        # Backup current OpenClaw
+        if [ -d "$OPENCLAW_PATH" ]; then
+            BACKUP_NAME="openclaw.backup.$(date +%Y%m%d-%H%M%S)"
+            echo "  Backing up current version to: $BACKUP_NAME"
+            mv "$OPENCLAW_PATH" "$POCKETAGENT_ROOT/lib/$BACKUP_NAME"
+        fi
+        
+        # Pull latest OpenClaw
+        echo "  Downloading latest OpenClaw..."
+        cd "$POCKETAGENT_ROOT/lib"
+        if ! git clone https://github.com/openclaw/openclaw.git openclaw; then
+            echo "❌ Failed to download OpenClaw"
+            echo "  Restoring backup..."
+            mv "$POCKETAGENT_ROOT/lib/$BACKUP_NAME" "$OPENCLAW_PATH"
+            exit 1
+        fi
+        
+        # Build
+        echo "  Building OpenClaw..."
+        cd openclaw
+        if ! pnpm install; then
+            echo "❌ Failed to install dependencies"
+            exit 1
+        fi
+        
+        if ! pnpm build; then
+            echo "❌ Failed to build OpenClaw"
+            exit 1
+        fi
+        
+        # Restart
+        echo "  Restarting agent..."
+        "$0" start
+        
+        echo ""
+        echo "✅ Updated to latest OpenClaw!"
+        echo "   Your data and settings are preserved."
+        echo "   Backup saved: $BACKUP_NAME"
+        ;;
+    
+    version)
+        if [ -d "$OPENCLAW_PATH/.git" ]; then
+            cd "$OPENCLAW_PATH"
+            COMMIT=$(git rev-parse --short HEAD)
+            BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            echo "📟 PocketAgent (OpenClaw)"
+            echo "   Branch: $BRANCH"
+            echo "   Commit: $COMMIT"
+        else
+            echo "❌ Unable to determine version"
+        fi
+        ;;
+    
+    doctor)
+        if ! is_running; then
+            echo "⚠️  PocketAgent is not running"
+            echo "   Start it with: pocketagent start"
+            exit 1
+        fi
+        
+        cd "$OPENCLAW_PATH"
+        node dist/index.js doctor "$@"
+        ;;
+    
+    models|config|workspace|skills|integrations|health)
+        if ! is_running; then
+            echo "⚠️  PocketAgent is not running"
+            echo "   Start it with: pocketagent start"
+            exit 1
+        fi
+        
+        cd "$OPENCLAW_PATH"
+        node dist/index.js "$@"
+        ;;
+    
+    --help|-h|help)
+        cat << EOF
+📟 PocketAgent - Local AI Agent
+
+Usage: pocketagent <command> [options]
+
+Commands:
+  start              Start PocketAgent service
+  stop               Stop PocketAgent service
+  restart            Restart PocketAgent service
+  status             Check if PocketAgent is running
+  logs               View logs (--follow, --tail N)
+  update             Update to latest OpenClaw version
+  version            Show current version
+  
+  doctor             Run diagnostics (--fix to auto-fix)
+  models             Manage AI models
+  config             View/edit configuration
+  workspace          Manage workspace
+  skills             Manage skills
+  integrations       Manage integrations
+  health             Check agent health
+  
+  --help, -h         Show this help message
+
+Examples:
+  pocketagent start
+  pocketagent logs --follow
+  pocketagent update
+  pocketagent models status
+  pocketagent doctor --fix
+
+Web UI: http://localhost:18789
+EOF
+        ;;
+    
+    *)
+        echo "❌ Unknown command: $1"
+        echo "Run 'pocketagent --help' for usage"
+        exit 1
+        ;;
+esac
