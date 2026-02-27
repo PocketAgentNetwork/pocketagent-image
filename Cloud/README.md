@@ -4,6 +4,38 @@ Production-ready cloud deployment image for PocketAgent. This image is used by P
 
 ---
 
+## 🚀 Quick Start (No Repo Clone Needed!)
+
+**One-line install:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/install.sh | bash
+cd pocketagent
+./setup.sh
+docker compose up -d
+```
+
+**Or manual download:**
+```bash
+mkdir pocketagent && cd pocketagent
+curl -O https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/docker-compose.yml
+curl -O https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Cloud/setup.sh
+chmod +x setup.sh
+./setup.sh
+docker compose up -d
+```
+
+**Or clone the full repo:**
+```bash
+git clone https://github.com/PocketAgentNetwork/pocketagent-image.git
+cd pocketagent-image/Cloud
+./setup.sh
+docker compose up -d
+```
+
+Then open: http://localhost:18789
+
+---
+
 ## 🎯 Purpose
 
 This cloud image serves two use cases:
