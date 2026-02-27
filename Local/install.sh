@@ -143,13 +143,14 @@ update_workspace() {
 
 cmd_install() {
     if check_installed; then
-        echo "⚠️  PocketAgent is already installed at: $INSTALL_DIR"
-        read -p "Do you want to reinstall? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled."
-            exit 0
-        fi
+        echo "✅ PocketAgent is already installed at: $INSTALL_DIR"
+        echo ""
+        echo "To update, run:"
+        echo "  $0 update"
+        echo ""
+        echo "To reinstall, run:"
+        echo "  $0 install --force"
+        exit 0
     fi
     
     echo "📟 PocketAgent Installer v$SCRIPT_VERSION"
