@@ -55,54 +55,61 @@ echo "   Keep this secret! You'll need it to connect your client."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# ── Setup CLI Alias ──
-echo "� Setting up 'pocketagent' command alias..."
-
-ALIAS_CMD='alias pocketagent="docker exec -it pocketagent node /pocketagent/lib/openclaw/dist/index.js"'
-
-# Detect shell and add alias
-if [ -f ~/.bashrc ]; then
-    if ! grep -q "alias pocketagent=" ~/.bashrc; then
-        echo "$ALIAS_CMD" >> ~/.bashrc
-        echo "✅ Added alias to ~/.bashrc"
-    else
-        echo "✅ Alias already exists in ~/.bashrc"
+# Setup CLI Alias (Optional)
+echo ""
+read -p "Do you want to add 'pocketagent' CLI alias? (Y/n): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    echo "🔧 Setting up 'pocketagent' command alias..."
+    
+    ALIAS_CMD='alias pocketagent="docker exec -it pocketagent node /pocketagent/lib/openclaw/dist/index.js"'
+    
+    # Detect shell and add alias
+    if [ -f ~/.bashrc ]; then
+        if ! grep -q "alias pocketagent=" ~/.bashrc; then
+            echo "$ALIAS_CMD" >> ~/.bashrc
+            echo "✅ Added alias to ~/.bashrc"
+        else
+            echo "✅ Alias already exists in ~/.bashrc"
+        fi
     fi
-fi
-
-if [ -f ~/.zshrc ]; then
-    if ! grep -q "alias pocketagent=" ~/.zshrc; then
-        echo "$ALIAS_CMD" >> ~/.zshrc
-        echo "✅ Added alias to ~/.zshrc"
-    else
-        echo "✅ Alias already exists in ~/.zshrc"
+    
+    if [ -f ~/.zshrc ]; then
+        if ! grep -q "alias pocketagent=" ~/.zshrc; then
+            echo "$ALIAS_CMD" >> ~/.zshrc
+            echo "✅ Added alias to ~/.zshrc"
+        else
+            echo "✅ Alias already exists in ~/.zshrc"
+        fi
     fi
+    
+    echo ""
+    echo "💡 Reload your shell to use the alias:"
+    echo "   source ~/.bashrc  # or source ~/.zshrc"
+else
+    echo "⏭️  Skipped alias setup"
+    echo ""
+    echo "💡 You can still use the full command:"
+    echo '   docker exec -it pocketagent node /pocketagent/lib/openclaw/dist/index.js'
 fi
 
 echo ""
 echo "📋 Next Steps:"
 echo ""
 echo "1. Start PocketAgent:"
-echo "   docker compose up --build -d"
+echo "   docker compose up -d"
 echo ""
-echo "2. Reload your shell to use 'pocketagent' command:"
-echo "   source ~/.bashrc  # or source ~/.zshrc"
-echo ""
-echo "3. Open in browser:"
+echo "2. Open in browser:"
 echo "   http://localhost:18789"
 echo ""
-echo "4. Complete onboarding in the web UI:"
+echo "3. Complete onboarding in the web UI:"
 echo "   - Set agent name and identity"
 echo "   - Add your API keys:"
 echo "     • Ollama Cloud (Recommended): https://ollama.com/settings/keys"
 echo "     • Or OpenAI, Anthropic, Google, etc."
 echo "   - Configure integrations (optional)"
 echo ""
-echo "5. Use the CLI:"
-echo "   pocketagent models status"
-echo "   pocketagent doctor --fix"
-echo ""
-echo "6. Check logs:"
+echo "4. Check logs:"
 echo "   docker compose logs -f"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -112,23 +119,4 @@ echo "   Cost: ~$1-5/month for typical usage"
 echo "   Sign up: https://ollama.com"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "3. Open in browser:"
-echo "   http://localhost:18789"
-echo ""
-echo "4. Complete onboarding in the web UI:"
-echo "   - Set agent name and identity"
-echo "   - Add your API keys (OpenAI, Anthropic, etc.)"
-echo "   - Configure integrations (optional)"
-echo ""
-echo "5. Use the CLI:"
-echo "   pocketagent models status"
-echo "   pocketagent doctor --fix"
-echo ""
-echo "6. Check logs:"
-echo "   docker compose logs -f"
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "� Note:"
-echo "   API keys are configured through the web UI during onboarding."
-echo "   No need to manually edit .env for API keys!"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "✅ Setup complete!"
