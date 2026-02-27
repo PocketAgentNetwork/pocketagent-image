@@ -1,170 +1,359 @@
-LOCAL POCKETAGENT IMAGE - Build Plan
-======================================
+📟 POCKETAGENT LOCAL DEPLOYMENT - Build Plan
+==============================================
 
-GOAL: Build the PocketAgent Image for local deployment on Mac
-(The installer will come later - it just delivers this image)
-
-NAMING CONVENTIONS (from PAN Naming Guide):
-============================================
-- Product: PocketAgent Image
-- Service: pocketagent-daemon
-- Runtime Location: /Applications/PocketAgent/
-- Process Manager: PAN Supervisor
-- User sees: "PocketAgent" (never OpenClaw, PocketModel, etc.)
-- Internal components: OpenClaw, PocketModel (hidden)
-
-KEY INSIGHT - WHAT OPENCLAW REALLY IS:
-======================================
-OpenClaw is a self-hosted AI agent gateway/framework that:
-
-✅ Connects to multiple messaging channels (WhatsApp, Telegram, Discord, Slack, iMessage, Signal, etc.)
-✅ Routes messages to AI models (Claude, GPT, Gemini, etc.)
-✅ Has persistent memory across sessions
-✅ Supports skills/plugins (extensible tools)
-✅ Runs 24/7 as a local service
-✅ Has session management and routing
-✅ Privacy-first, local architecture
-✅ Includes voice interaction capabilities
-✅ Has a web dashboard/control UI
-✅ Runs on Node.js (22+)
-
-WHAT WE'RE ADDING TO MAKE POCKETAGENT:
-=======================================
-
-1. POCKETMODEL (Our Smart Routing Layer)
-   - Intelligent model selection (not just routing to one model)
-   - Cost optimization across providers
-   - Token budget management
-   - Fallback strategies
-   - Caching layer
-
-2. PAN SUPERVISOR (Our Management Layer)
-   - Manages OpenClaw + PocketModel together
-   - Health monitoring
-   - Auto-restart and recovery
-   - Update management
-   - Branded startup/shutdown
-
-3. POCKETAGENT BRANDING & UX
-   - Consumer-friendly packaging
-   - Hide OpenClaw complexity
-   - Branded as "PocketAgent"
-   - QR code pairing with mobile client
-   - Simplified configuration
-
-4. MOBILE-FIRST CLIENT
-   - OpenClaw uses messaging apps (Telegram, WhatsApp, etc.)
-   - We're building a dedicated PocketAgent mobile app
-   - Native iOS/Android experience
-   - Activity feed, approvals, task management
-   - Better UX than messaging apps
-
-5. PAN NETWORK INTEGRATION
-   - Agent-to-agent communication
-   - Job marketplace
-   - Distributed task delegation
+GOAL: Native installation of PocketAgent on local machines
+Works on: Mac, Linux, Windows (native, not Docker)
 
 ---
 
-COMPONENTS IN IMAGE:
-====================
+## DEPLOYMENT OPTIONS
 
-1. OPENCLAW (Core - open source framework)
-   ✅ Gateway/routing layer
-   ✅ Multi-channel messaging (Telegram, WhatsApp, Discord, Slack, iMessage, Signal, etc.)
-   ✅ Session management
-   ✅ Persistent memory system
-   ✅ Skills/plugins system (extensible tools)
-   ✅ Web dashboard/control UI
-   ✅ Voice interaction support
-   ✅ Runs on Node.js
-   Location: /Applications/PocketAgent/lib/openclaw/
+### Phase 1: NATIVE INSTALLATION (Current Focus)
+- Direct installation on user's machine
+- OS-specific paths and integration
+- Feels like a "real app"
+- Better UX, system integration
+- No Docker required
 
-2. POCKETMODEL (Our smart routing layer)
-   - Sits between OpenClaw and AI models
-   - Intelligent model selection
-   - Cost optimization
-   - Token management
-   - Caching
-   Location: /Applications/PocketAgent/lib/pocketmodel/
+### Phase 2: DOCKER FOR LOCAL (Later)
+- Same Docker image as Cloud
+- Just bind to localhost instead of 0.0.0.0
+- Easy fallback for users who prefer Docker
+- Cross-platform without OS-specific code
 
-3. PAN SUPERVISOR (Our process manager)
-   - Manages OpenClaw + PocketModel
-   - Health monitoring
-   - Auto-restart
-   - Branded startup
-   Location: /Applications/PocketAgent/lib/supervisor/
-
-4. POCKETAGENT CONFIGS
-   - Consumer-friendly defaults
-   - PAN branding
-   - Pre-configured channels
-   - QR pairing setup
-   Location: /Applications/PocketAgent/config/
+**This plan focuses on Phase 1 (Native)**
 
 ---
 
-IMAGE STRUCTURE:
-================
-This is what we're building - the complete runtime environment.
-Later, an installer will deliver this to users.
+## WHAT WE'RE BUILDING
 
-The image is a self-contained package with:
-- All binaries and dependencies
-- Configuration files
-- Service definitions
-- Startup scripts
+A native PocketAgent installation that:
+1. Runs OpenClaw under the hood (hidden)
+2. All branding is "PocketAgent" 📟
+3. Integrates with OS (menu bar, system tray, etc.)
+4. Works on Mac, Linux, Windows
+5. User never sees "OpenClaw" or technical details
 
 ---
 
-STARTUP SEQUENCE (when image runs):
-===================================
-1. PAN Supervisor starts
-2. Initializes folder structure
-3. Starts OpenClaw runtime
-4. Starts PocketModel service
-5. Starts communication layer
-6. Generates QR code for pairing
-7. Waits for PocketAgent Client connection
-8. Agent becomes live
+## FOLDER STRUCTURE (OS-Specific)
 
----
-
-FOLDER STRUCTURE:
-=================
+### macOS:
+```
 /Applications/PocketAgent/
-├── bin/                    # Executables
+├── bin/
+│   └── pocketagent              # Main executable
 ├── lib/
-│   ├── openclaw/          # OpenClaw framework (hidden)
-│   ├── pocketmodel/       # PocketModel service (hidden)
-│   └── supervisor/        # PAN Supervisor
-├── data/                  # Memory & storage
-│   ├── vector/
-│   └── db/
-├── connectors/            # Integration modules
-├── logs/                  # Log files
-└── config/                # Configuration files
+│   └── openclaw/                # OpenClaw (hidden)
+├── home/                        # Agent's home directory
+│   ├── .openclaw/              # Config & memory
+│   ├── files/                  # Workspace
+│   ├── .local/bin/             # Installed tools
+│   ├── .ssh/                   # SSH keys
+│   └── .config/                # Other configs
+├── data/                        # PocketAgent data
+│   ├── pocketmodel/            # (future)
+│   └── pan/                    # (future)
+└── logs/                        # Logs
+    ├── openclaw.log
+    └── pocketagent.log
+```
+
+### Linux:
+```
+~/.local/share/pocketagent/      # Or /opt/pocketagent/ for system-wide
+├── bin/
+├── lib/
+├── home/
+├── data/
+└── logs/
+```
+
+### Windows:
+```
+C:\Users\{username}\AppData\Local\PocketAgent\
+├── bin\
+├── lib\
+├── home\
+├── data\
+└── logs\
+```
 
 ---
 
-BUILD STEPS:
-============
-1. Set up image folder structure
-2. Pull in OpenClaw (already complete with all features)
-3. Add PocketModel layer on top
-4. Build PAN Supervisor to manage both
-5. Add PocketAgent branding & configs
-6. Create startup scripts
-7. Test image on Mac
-8. Later: wrap in installer for distribution
+## COMPONENTS
+
+### 1. OpenClaw (Core Framework)
+- Location: `lib/openclaw/`
+- Cloned from: https://github.com/openclaw/openclaw
+- Built with: pnpm install && pnpm build
+- Hidden from user
+
+### 2. PocketAgent Wrapper
+- Location: `bin/pocketagent`
+- Sets HOME to agent's home directory
+- Starts OpenClaw with PocketAgent branding
+- Handles startup/shutdown
+
+### 3. Agent Home Directory
+- Location: `home/`
+- OpenClaw uses this as $HOME
+- Contains:
+  - `.openclaw/` - Config, memory, credentials
+  - `files/` - Workspace
+  - `.local/bin/` - Tools
+  - `.ssh/` - SSH keys
+
+### 4. Workspace (Baked In)
+- Same workspace files as Cloud image
+- IDENTITY.md, SOUL.md, JOB.md, etc.
+- Copied to `home/.openclaw/workspace/` on first run
 
 ---
 
-REALITY CHECK:
-==============
-We're NOT building an agent from scratch.
-We're PACKAGING OpenClaw (which already works) with:
-- PocketModel routing layer
-- Consumer-friendly branding
-- Managed runtime environment
-- Easy deployment
+## INSTALLATION FLOW
+
+### Step 1: Prerequisites Check
+- Node.js 22+ installed
+- pnpm installed (or install it)
+- Git installed
+
+### Step 2: Create Folder Structure
+- Create all directories
+- Set proper permissions
+
+### Step 3: Install OpenClaw
+```bash
+cd lib/openclaw
+git clone https://github.com/openclaw/openclaw.git .
+pnpm install
+pnpm build
+```
+
+### Step 4: Copy Workspace Files
+- Copy workspace/ to home/.openclaw/workspace/
+- Set version file
+
+### Step 5: Create Wrapper Script
+- bin/pocketagent script
+- Sets environment variables
+- Starts OpenClaw
+
+### Step 6: Setup System Integration
+- macOS: Create launchd plist
+- Linux: Create systemd service
+- Windows: Create Windows Service
+
+### Step 7: Generate Gateway Token
+- Run setup script
+- Save to home/.openclaw/.env
+
+---
+
+## STARTUP SEQUENCE
+
+1. User runs: `pocketagent start`
+2. Wrapper script sets:
+   - HOME=/Applications/PocketAgent/home
+   - XDG_CONFIG_HOME=$HOME/.openclaw
+3. Starts OpenClaw gateway
+4. OpenClaw binds to localhost:18789
+5. User opens: http://localhost:18789
+6. Onboarding UI appears
+7. User configures agent
+8. Agent is live!
+
+---
+
+## WRAPPER SCRIPT (bin/pocketagent)
+
+```bash
+#!/bin/bash
+# PocketAgent Wrapper Script
+
+POCKETAGENT_ROOT="/Applications/PocketAgent"
+POCKETAGENT_HOME="$POCKETAGENT_ROOT/home"
+OPENCLAW_PATH="$POCKETAGENT_ROOT/lib/openclaw"
+
+export HOME="$POCKETAGENT_HOME"
+export XDG_CONFIG_HOME="$HOME/.openclaw"
+
+case "$1" in
+  start)
+    echo "📟 Starting PocketAgent..."
+    cd "$OPENCLAW_PATH"
+    node dist/index.js gateway \
+      --workspace "$HOME/.openclaw/workspace" \
+      --bind "127.0.0.1" \
+      --port 18789 \
+      --allow-unconfigured
+    ;;
+  stop)
+    echo "📟 Stopping PocketAgent..."
+    pkill -f "openclaw.*gateway"
+    ;;
+  status)
+    pgrep -f "openclaw.*gateway" > /dev/null && echo "Running" || echo "Stopped"
+    ;;
+  *)
+    echo "Usage: pocketagent {start|stop|status}"
+    exit 1
+    ;;
+esac
+```
+
+---
+
+## OS-SPECIFIC INTEGRATION
+
+### macOS: launchd Service
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pocketagent.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/PocketAgent/bin/pocketagent</string>
+        <string>start</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
+```
+
+### Linux: systemd Service
+```ini
+[Unit]
+Description=PocketAgent Daemon
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/user/.local/share/pocketagent/bin/pocketagent start
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Windows: Windows Service
+- Use NSSM (Non-Sucking Service Manager)
+- Or Node.js service wrapper
+
+---
+
+## INSTALLER SCRIPT (install.sh)
+
+```bash
+#!/bin/bash
+# PocketAgent Local Installer
+
+echo "📟 PocketAgent Installer"
+echo "======================="
+
+# Detect OS
+OS="$(uname -s)"
+case "$OS" in
+  Darwin)  INSTALL_DIR="/Applications/PocketAgent" ;;
+  Linux)   INSTALL_DIR="$HOME/.local/share/pocketagent" ;;
+  *)       echo "Unsupported OS"; exit 1 ;;
+esac
+
+# Check prerequisites
+command -v node >/dev/null || { echo "Node.js 22+ required"; exit 1; }
+command -v pnpm >/dev/null || { echo "Installing pnpm..."; npm install -g pnpm; }
+
+# Create directories
+mkdir -p "$INSTALL_DIR"/{bin,lib,home,data,logs}
+mkdir -p "$INSTALL_DIR/home"/{.openclaw,.local/bin,.ssh,.config,files}
+
+# Clone and build OpenClaw
+cd "$INSTALL_DIR/lib"
+git clone https://github.com/openclaw/openclaw.git openclaw
+cd openclaw
+pnpm install
+pnpm build
+
+# Copy workspace files
+cp -r /path/to/workspace "$INSTALL_DIR/home/.openclaw/workspace"
+
+# Create wrapper script
+cat > "$INSTALL_DIR/bin/pocketagent" << 'EOF'
+#!/bin/bash
+# [wrapper script content here]
+EOF
+chmod +x "$INSTALL_DIR/bin/pocketagent"
+
+# Generate gateway token
+TOKEN=$(openssl rand -hex 32)
+echo "OPENCLAW_GATEWAY_TOKEN=$TOKEN" > "$INSTALL_DIR/home/.openclaw/.env"
+
+echo "✅ PocketAgent installed!"
+echo ""
+echo "Start with: $INSTALL_DIR/bin/pocketagent start"
+echo "Open: http://localhost:18789"
+```
+
+---
+
+## DEVELOPMENT STEPS
+
+### Phase 1: Basic Installation ✅ (Next)
+1. Create folder structure
+2. Install OpenClaw
+3. Create wrapper script
+4. Test manual start/stop
+
+### Phase 2: Workspace Integration
+1. Copy workspace files
+2. Version tracking
+3. Update mechanism
+
+### Phase 3: System Integration
+1. launchd/systemd service
+2. Auto-start on boot
+3. Menu bar icon (optional)
+
+### Phase 4: Installer
+1. One-line installer script
+2. Uninstaller
+3. Update mechanism
+
+### Phase 5: Docker Alternative (Later)
+1. Use same Cloud image
+2. Bind to localhost
+3. Document as alternative
+
+---
+
+## SUCCESS CRITERIA
+
+✅ OpenClaw installed and hidden
+✅ Runs as "PocketAgent" service
+✅ Accessible at http://localhost:18789
+✅ Workspace files baked in
+✅ Gateway token generated
+✅ User only sees PocketAgent branding
+✅ Works on Mac and Linux
+✅ Easy to install and uninstall
+
+---
+
+## FUTURE ENHANCEMENTS
+
+- PocketModel integration
+- PAN Supervisor
+- Menu bar/system tray app
+- Desktop notifications
+- Auto-updates
+- Docker option for easy deployment
+
+---
+
+**CURRENT FOCUS:** Build the basic native installation for Mac/Linux first!
