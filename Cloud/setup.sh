@@ -30,6 +30,9 @@ cat > .env << EOF
 # PocketAgent Cloud Container Configuration
 # Generated: $(date)
 
+# Container Identity (important for persistent hostname)
+CONTAINER_NAME=pocketagent
+
 # Image Configuration (optional - defaults to official PocketAgent image)
 # POCKETAGENT_IMAGE=ghcr.io/yourusername/pocketagent-image
 POCKETAGENT_VERSION=latest

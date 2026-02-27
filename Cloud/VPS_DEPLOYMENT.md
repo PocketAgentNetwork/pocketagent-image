@@ -115,8 +115,22 @@ chmod +x setup.sh
 
 **What this does:**
 - Generates a secure gateway token
-- Creates `.env` file
-- Adds `pocketagent` CLI alias to your shell (~/.bashrc or ~/.zshrc)
+- Creates `.env` file with default container name (`pocketagent`)
+- Sets persistent hostname (stays same across restarts/rebuilds)
+- Optionally adds `pocketagent` CLI alias to your shell
+
+**The generated .env includes:**
+```bash
+CONTAINER_NAME=pocketagent          # Container name & hostname
+OPENCLAW_GATEWAY_TOKEN=abc123...    # Your secure token
+OPENCLAW_GATEWAY_PORT=18789         # Gateway port
+```
+
+**Why hostname matters:**
+- SSH keys are tied to hostname
+- License keys may fingerprint by hostname
+- Services that cache by hostname work correctly
+- Hostname stays consistent even after rebuilds
 
 **Output:**
 ```
