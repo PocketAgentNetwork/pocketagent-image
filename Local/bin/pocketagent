@@ -126,25 +126,37 @@ case "$1" in
             mv "$OPENCLAW_PATH" "$POCKETAGENT_ROOT/lib/$BACKUP_NAME"
         fi
         
-        # Pull latest OpenClaw
-        echo "  Downloading latest OpenClaw..."
+        # Get tested OpenClaw version from PocketAgent repo
+        echo "  Fetching tested OpenClaw version..."
+        OPENCLAW_VERSION=$(curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/OPENCLAW_VERSION)
+        
+        if [ -z "$OPENCLAW_VERSION" ]; then
+            echo "❌ Failed to fetch OpenClaw version"
+            echo "  Restoring backup..."
+            mv "$POCKETAGENT_ROOT/lib/$BACKUP_NAME" "$OPENCLAW_PATH"
+            exit 1
+        fi
+        
+        echo "  Downloading OpenClaw $OPENCLAW_VERSION..."
         cd "$POCKETAGENT_ROOT/lib"
-        if ! git clone https://github.com/openclaw/openclaw.git openclaw; then
+        
+        # Download release tarball
+        if ! curl -fsSL "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz; then
             echo "❌ Failed to download OpenClaw"
             echo "  Restoring backup..."
             mv "$POCKETAGENT_ROOT/lib/$BACKUP_NAME" "$OPENCLAW_PATH"
             exit 1
         fi
         
+        # Extract
+        tar -xzf openclaw.tar.gz
+        mv "openclaw-${OPENCLAW_VERSION#v}" openclaw
+        rm openclaw.tar.gz
+        
         cd openclaw
         
-        # Get latest release tag
-        LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "main")
-        echo "  Using OpenClaw version: $LATEST_RELEASE"
-        git checkout "$LATEST_RELEASE"
-        
         # Save version info
-        echo "$LATEST_RELEASE" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
+        echo "$OPENCLAW_VERSION" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
         
         # Build
         echo "  Building OpenClaw..."
@@ -163,7 +175,7 @@ case "$1" in
         "$0" start
         
         echo ""
-        echo "✅ Updated to latest OpenClaw!"
+        echo "✅ Updated to OpenClaw $OPENCLAW_VERSION!"
         echo "   Your data and settings are preserved."
         echo "   Backup saved: $BACKUP_NAME"
         ;;

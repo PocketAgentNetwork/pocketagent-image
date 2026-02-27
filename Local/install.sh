@@ -197,7 +197,6 @@ cmd_install() {
     # Check prerequisites
     echo "✓ Checking prerequisites..."
     command -v node >/dev/null || { echo "❌ Node.js 22+ required"; exit 1; }
-    command -v git >/dev/null || { echo "❌ Git required"; exit 1; }
     command -v pnpm >/dev/null || { echo "Installing pnpm..."; npm install -g pnpm; }
     
     # Create directories
@@ -212,18 +211,30 @@ cmd_install() {
         rm -rf openclaw
     fi
     
-    # Clone and checkout latest release
-    git clone https://github.com/openclaw/openclaw.git openclaw
+    # Get tested OpenClaw version from PocketAgent repo
+    OPENCLAW_VERSION=$(curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/OPENCLAW_VERSION)
+    
+    if [ -z "$OPENCLAW_VERSION" ]; then
+        echo "❌ Failed to fetch OpenClaw version"
+        exit 1
+    fi
+    
+    echo "  Downloading OpenClaw $OPENCLAW_VERSION..."
+    
+    # Download release tarball
+    curl -fsSL "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz
+    
+    # Extract
+    tar -xzf openclaw.tar.gz
+    mv "openclaw-${OPENCLAW_VERSION#v}" openclaw
+    rm openclaw.tar.gz
+    
     cd openclaw
     
-    # Get latest release tag
-    LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "main")
-    echo "  Using OpenClaw version: $LATEST_RELEASE"
-    git checkout "$LATEST_RELEASE"
-    
     # Save version info
-    echo "$LATEST_RELEASE" > "$INSTALL_DIR/OPENCLAW_VERSION"
+    echo "$OPENCLAW_VERSION" > "$INSTALL_DIR/OPENCLAW_VERSION"
     
+    echo "  Building OpenClaw..."
     pnpm install
     pnpm build
     

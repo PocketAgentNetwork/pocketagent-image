@@ -26,6 +26,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Read OpenClaw version
+        id: openclaw
+        run: |
+          OPENCLAW_VERSION=$(cat OPENCLAW_VERSION)
+          echo "version=${OPENCLAW_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -70,7 +76,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           build-args: |
-            OPENCLAW_VERSION=v2026.2.26
+            OPENCLAW_VERSION=${{ steps.openclaw.outputs.version }}
 
       - name: Generate deployment instructions
         run: |
