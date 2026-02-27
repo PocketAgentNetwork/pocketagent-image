@@ -277,7 +277,7 @@ EOF
 cmd_update() {
     if ! check_installed; then
         echo "❌ PocketAgent is not installed"
-        echo "   Run: curl -fsSL https://install.pocketagent.com | bash"
+        echo "   Run: curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash"
         exit 1
     fi
     
@@ -345,13 +345,13 @@ Commands:
 
 Examples:
   # Install
-  curl -fsSL https://install.pocketagent.com | bash
+  curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash
   
   # Update
-  $0 update
+  curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash -s update
   
   # Uninstall
-  $0 uninstall
+  curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash -s uninstall
 
 After installation, use 'pocketagent' command to manage your agent.
 EOF

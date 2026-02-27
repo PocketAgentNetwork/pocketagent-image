@@ -17,7 +17,13 @@ Install PocketAgent as a **background service** on your local machine. Your pers
 **Coming Soon!** One-line installer:
 
 ```bash
-curl -fsSL https://install.pocketagent.com | bash
+# Install PocketAgent
+curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash
+
+# Or download and run manually
+curl -O https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh
+chmod +x install.sh
+./install.sh
 ```
 
 The installer will:
