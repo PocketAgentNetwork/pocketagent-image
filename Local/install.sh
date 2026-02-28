@@ -72,13 +72,27 @@ personalize_workspace() {
     echo "Let's personalize your agent!"
     echo ""
     
-    read -p "What's your name? " USER_NAME
-    read -p "What should your agent be called? (default: PocketAgent) " AGENT_NAME
-    AGENT_NAME=${AGENT_NAME:-PocketAgent}
-    
-    read -p "What's your timezone? (e.g., America/New_York) " USER_TIMEZONE
-    read -p "What's your preferred language? (default: English) " USER_LANGUAGE
-    USER_LANGUAGE=${USER_LANGUAGE:-English}
+    # Check if stdin is available (not piped)
+    if [ -t 0 ]; then
+        read -p "What's your name? " USER_NAME
+        read -p "What should your agent be called? (default: PocketAgent) " AGENT_NAME
+        AGENT_NAME=${AGENT_NAME:-PocketAgent}
+        
+        read -p "What's your timezone? (e.g., America/New_York) " USER_TIMEZONE
+        read -p "What's your preferred language? (default: English) " USER_LANGUAGE
+        USER_LANGUAGE=${USER_LANGUAGE:-English}
+    else
+        # Stdin not available (piped install), use defaults
+        echo "⚠️  Interactive input not available (piped install)"
+        echo "   Using default values. You can customize later by editing:"
+        echo "   - $workspace_dir/IDENTITY.md"
+        echo "   - $workspace_dir/USER.md"
+        echo ""
+        USER_NAME="User"
+        AGENT_NAME="PocketAgent"
+        USER_TIMEZONE="UTC"
+        USER_LANGUAGE="English"
+    fi
     
     echo ""
     echo "Great! Setting up $AGENT_NAME for $USER_NAME..."
