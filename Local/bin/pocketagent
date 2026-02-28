@@ -235,6 +235,15 @@ Commands:
   
   --help, -h         Show this help message
 
+All other OpenClaw commands are also available:
+  pocketagent <openclaw-command> [options]
+  
+  Examples:
+    pocketagent channels login
+    pocketagent message send --target +1234567890 --message "Hi"
+    pocketagent agents list
+    pocketagent browser open
+
 Examples:
   pocketagent start
   pocketagent logs --follow
@@ -247,8 +256,14 @@ EOF
         ;;
     
     *)
-        echo "❌ Unknown command: $1"
-        echo "Run 'pocketagent --help' for usage"
-        exit 1
+        # Pass any other command directly to openclaw
+        if [ "$1" != "" ]; then
+            cd "$OPENCLAW_PATH"
+            node dist/index.js "$@"
+        else
+            echo "❌ No command specified"
+            echo "Run 'pocketagent --help' for usage"
+            exit 1
+        fi
         ;;
 esac
