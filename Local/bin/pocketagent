@@ -35,9 +35,7 @@ case "$1" in
         fi
         
         echo "📟 Starting PocketAgent..."
-        cd "$OPENCLAW_PATH"
-        nohup node dist/index.js gateway \
-            --workspace "$HOME/.openclaw/workspace" \
+        nohup node "$OPENCLAW_PATH/dist/index.js" gateway \
             --bind "127.0.0.1" \
             --port 18789 \
             --allow-unconfigured \
