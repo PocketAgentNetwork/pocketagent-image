@@ -193,20 +193,27 @@ update_workspace() {
 # ══════════════════════════════════════════════════════════════
 
 cmd_install() {
-    if check_installed; then
+    echo "📟 PocketAgent Installer v$SCRIPT_VERSION"
+    echo "=========================================="
+    echo ""
+    
+    # Check if fully installed
+    if check_installed && [ -f "$INSTALL_DIR/home/.openclaw/.env" ]; then
         echo "✅ PocketAgent is already installed at: $INSTALL_DIR"
         echo ""
         echo "To update, run:"
         echo "  $0 update"
         echo ""
         echo "To reinstall, run:"
-        echo "  $0 install --force"
+        echo "  rm -rf $INSTALL_DIR && $0 install"
         exit 0
     fi
     
-    echo "📟 PocketAgent Installer v$SCRIPT_VERSION"
-    echo "=========================================="
-    echo ""
+    # Resume installation if partially complete
+    if [ -d "$INSTALL_DIR" ]; then
+        echo "⚠️  Found partial installation, resuming..."
+        echo ""
+    fi
     
     # Check prerequisites
     echo "✓ Checking prerequisites..."
@@ -214,63 +221,84 @@ cmd_install() {
     command -v pnpm >/dev/null || { echo "Installing pnpm..."; npm install -g pnpm; }
     
     # Create directories
-    echo "✓ Creating directories..."
-    mkdir -p "$INSTALL_DIR"/{bin,lib,home,data,logs}
-    mkdir -p "$INSTALL_DIR/home"/{.openclaw,.local/bin,.ssh,.config,files}
+    if [ ! -d "$INSTALL_DIR/home/.openclaw" ]; then
+        echo "✓ Creating directories..."
+        mkdir -p "$INSTALL_DIR"/{bin,lib,home,data,logs}
+        mkdir -p "$INSTALL_DIR/home"/{.openclaw,.local/bin,.ssh,.config,files}
+    else
+        echo "✓ Directories exist, skipping..."
+    fi
     
     # Install OpenClaw
-    echo "✓ Installing OpenClaw..."
-    cd "$INSTALL_DIR/lib"
-    if [ -d "openclaw" ]; then
-        rm -rf openclaw
+    if [ ! -d "$INSTALL_DIR/lib/openclaw/dist" ]; then
+        echo "✓ Installing OpenClaw..."
+        cd "$INSTALL_DIR/lib"
+        if [ -d "openclaw" ]; then
+            rm -rf openclaw
+        fi
+        
+        # Get tested OpenClaw version from PocketAgent repo
+        OPENCLAW_VERSION=$(curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/OPENCLAW_VERSION)
+        
+        if [ -z "$OPENCLAW_VERSION" ]; then
+            echo "❌ Failed to fetch OpenClaw version"
+            exit 1
+        fi
+        
+        echo "  Downloading OpenClaw $OPENCLAW_VERSION..."
+        
+        # Download release tarball with progress
+        curl -L --progress-bar "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz
+        
+        # Extract
+        tar -xzf openclaw.tar.gz
+        mv "openclaw-${OPENCLAW_VERSION#v}" openclaw
+        rm openclaw.tar.gz
+        
+        cd openclaw
+        
+        # Save version info
+        echo "$OPENCLAW_VERSION" > "$INSTALL_DIR/OPENCLAW_VERSION"
+        
+        echo "  Building OpenClaw..."
+        pnpm install
+        pnpm build
+    else
+        echo "✓ OpenClaw already installed, skipping..."
     fi
-    
-    # Get tested OpenClaw version from PocketAgent repo
-    OPENCLAW_VERSION=$(curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/OPENCLAW_VERSION)
-    
-    if [ -z "$OPENCLAW_VERSION" ]; then
-        echo "❌ Failed to fetch OpenClaw version"
-        exit 1
-    fi
-    
-    echo "  Downloading OpenClaw $OPENCLAW_VERSION..."
-    
-    # Download release tarball with progress
-    curl -L --progress-bar "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz
-    
-    # Extract
-    tar -xzf openclaw.tar.gz
-    mv "openclaw-${OPENCLAW_VERSION#v}" openclaw
-    rm openclaw.tar.gz
-    
-    cd openclaw
-    
-    # Save version info
-    echo "$OPENCLAW_VERSION" > "$INSTALL_DIR/OPENCLAW_VERSION"
-    
-    echo "  Building OpenClaw..."
-    pnpm install
-    pnpm build
     
     # Download and personalize workspace
-    echo "✓ Setting up workspace..."
-    download_workspace "$INSTALL_DIR/home/.openclaw/workspace"
-    personalize_workspace "$INSTALL_DIR/home/.openclaw/workspace"
+    if [ ! -f "$INSTALL_DIR/home/.openclaw/workspace/IDENTITY.md" ]; then
+        echo "✓ Setting up workspace..."
+        download_workspace "$INSTALL_DIR/home/.openclaw/workspace"
+        personalize_workspace "$INSTALL_DIR/home/.openclaw/workspace"
+    else
+        echo "✓ Workspace already exists, skipping..."
+    fi
     
     # Generate gateway token
-    echo "✓ Generating gateway token..."
-    TOKEN=$(openssl rand -hex 32)
-    cat > "$INSTALL_DIR/home/.openclaw/.env" << EOF
+    if [ ! -f "$INSTALL_DIR/home/.openclaw/.env" ]; then
+        echo "✓ Generating gateway token..."
+        TOKEN=$(openssl rand -hex 32)
+        cat > "$INSTALL_DIR/home/.openclaw/.env" << EOF
 OPENCLAW_GATEWAY_TOKEN=$TOKEN
 OPENCLAW_GATEWAY_PORT=18789
 OPENCLAW_GATEWAY_BIND=127.0.0.1
 EOF
+    else
+        echo "✓ Gateway token already exists, skipping..."
+        TOKEN=$(grep OPENCLAW_GATEWAY_TOKEN "$INSTALL_DIR/home/.openclaw/.env" | cut -d= -f2)
+    fi
     
     # Copy pocketagent script
-    echo "✓ Installing pocketagent command..."
-    curl -fsSL "https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/bin/pocketagent" \
-        -o "$INSTALL_DIR/bin/pocketagent"
-    chmod +x "$INSTALL_DIR/bin/pocketagent"
+    if [ ! -f "$INSTALL_DIR/bin/pocketagent" ]; then
+        echo "✓ Installing pocketagent command..."
+        curl -fsSL "https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/bin/pocketagent" \
+            -o "$INSTALL_DIR/bin/pocketagent"
+        chmod +x "$INSTALL_DIR/bin/pocketagent"
+    else
+        echo "✓ pocketagent command already installed, skipping..."
+    fi
     
     # Add to PATH
     if [[ "$OSTYPE" == "darwin"* ]]; then
