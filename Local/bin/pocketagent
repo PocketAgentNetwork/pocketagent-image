@@ -175,6 +175,16 @@ case "$1" in
         echo "   Backup saved: $BACKUP_NAME"
         ;;
     
+    fix-context)
+        echo "📟 Fixing model context window..."
+        cd "$OPENCLAW_PATH"
+        node dist/index.js config set models.providers.pocketagent-local.models.0.contextWindow 128000
+        node dist/index.js config set models.providers.pocketagent-local.models.0.maxTokens 128000
+        echo ""
+        echo "✅ Context window updated to 128000 tokens"
+        echo "   Restart PocketAgent to apply: pocketagent restart"
+        ;;
+    
     version)
         if [ -d "$OPENCLAW_PATH/.git" ]; then
             cd "$OPENCLAW_PATH"
@@ -224,6 +234,7 @@ Commands:
   logs               View logs (--follow, --tail N)
   update             Update to latest OpenClaw version
   version            Show current version
+  fix-context        Fix model context window (set to 128k tokens)
   
   doctor             Run diagnostics (--fix to auto-fix)
   models             Manage AI models
@@ -250,6 +261,7 @@ Examples:
   pocketagent update
   pocketagent models status
   pocketagent doctor --fix
+  pocketagent fix-context
 
 Web UI: http://localhost:18789
 EOF

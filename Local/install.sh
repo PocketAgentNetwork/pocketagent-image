@@ -311,6 +311,20 @@ EOF
         echo "✓ pocketagent command already installed, skipping..."
     fi
     
+    # Fix model context window if config exists
+    if [ -f "$INSTALL_DIR/home/.openclaw/openclaw.json" ]; then
+        echo "✓ Checking model context window..."
+        # Check if context window is too small
+        CONTEXT_WINDOW=$(grep -o '"contextWindow":[0-9]*' "$INSTALL_DIR/home/.openclaw/openclaw.json" | head -1 | cut -d: -f2)
+        if [ ! -z "$CONTEXT_WINDOW" ] && [ "$CONTEXT_WINDOW" -lt 16000 ]; then
+            echo "  Updating context window from $CONTEXT_WINDOW to 128000..."
+            export HOME="$INSTALL_DIR/home"
+            export XDG_CONFIG_HOME="$HOME/.openclaw"
+            "$INSTALL_DIR/bin/pocketagent" config set models.providers.pocketagent-local.models.0.contextWindow 128000 >/dev/null 2>&1 || true
+            "$INSTALL_DIR/bin/pocketagent" config set models.providers.pocketagent-local.models.0.maxTokens 128000 >/dev/null 2>&1 || true
+        fi
+    fi
+    
     # Add to PATH
     if [[ "$OSTYPE" == "darwin"* ]]; then
         SHELL_RC="$HOME/.zshrc"
@@ -345,6 +359,9 @@ EOF
     echo "   http://localhost:18789"
     echo ""
     echo "4. Complete onboarding (add API keys)"
+    echo ""
+    echo "💡 Note: If you configure a custom model, ensure it has"
+    echo "   a context window of at least 16000 tokens."
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 }
