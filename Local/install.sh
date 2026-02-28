@@ -221,8 +221,8 @@ cmd_install() {
     
     echo "  Downloading OpenClaw $OPENCLAW_VERSION..."
     
-    # Download release tarball
-    curl -fsSL "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz
+    # Download release tarball with progress
+    curl -L --progress-bar "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz
     
     # Extract
     tar -xzf openclaw.tar.gz
