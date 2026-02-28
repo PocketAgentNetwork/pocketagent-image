@@ -36,9 +36,6 @@ case "$1" in
         
         echo "📟 Starting PocketAgent..."
         nohup node "$OPENCLAW_PATH/dist/index.js" gateway \
-            --bind loopback \
-            --port 18789 \
-            --allow-unconfigured \
             >> "$LOG_FILE" 2>&1 &
         
         sleep 2
