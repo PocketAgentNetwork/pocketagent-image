@@ -230,8 +230,21 @@ cmd_install() {
     fi
     
     # Install OpenClaw
-    if [ ! -d "$INSTALL_DIR/lib/openclaw/dist" ]; then
+    if [ -f "$INSTALL_DIR/OPENCLAW_VERSION" ] && [ -d "$INSTALL_DIR/lib/openclaw" ]; then
+        echo "✓ OpenClaw already downloaded, checking build..."
+        cd "$INSTALL_DIR/lib/openclaw"
+        
+        # Check if build is complete
+        if [ ! -d "dist" ] || [ ! -f "dist/index.js" ]; then
+            echo "  Build incomplete, rebuilding..."
+            pnpm install
+            pnpm build
+        else
+            echo "  Build complete, skipping..."
+        fi
+    else
         echo "✓ Installing OpenClaw..."
+        mkdir -p "$INSTALL_DIR/lib"
         cd "$INSTALL_DIR/lib"
         if [ -d "openclaw" ]; then
             rm -rf openclaw
@@ -263,8 +276,6 @@ cmd_install() {
         echo "  Building OpenClaw..."
         pnpm install
         pnpm build
-    else
-        echo "✓ OpenClaw already installed, skipping..."
     fi
     
     # Download and personalize workspace
