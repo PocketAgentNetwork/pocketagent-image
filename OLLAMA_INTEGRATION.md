@@ -18,14 +18,14 @@ Ollama Cloud provides access to powerful open-source models (Kimi K2.5, MiniMax 
 
 | Model | Best For | Notes |
 |-------|----------|-------|
-| `kimi-k2.5:cloud` | General assistant, multimodal | Vision + language, agentic capabilities |
-| `minimax-m2.5:cloud` | Coding & productivity | State-of-the-art for real-world tasks |
-| `minimax-m2:cloud` | Agent workflows | High-efficiency coding |
-| `glm-5:cloud` | Complex reasoning | 744B total params (40B active) |
-| `qwen3-coder-next:cloud` | Multilingual coding | Optimized for development |
-| `qwen3.5:cloud` | Multimodal with tools | Vision + tools |
-| `gpt-oss:120b-cloud` | Large tasks | 120B parameters |
-| `deepseek-v3:cloud` | Advanced reasoning | Latest DeepSeek |
+| `kimi-k2.5` | General assistant, multimodal | Vision + language, agentic capabilities |
+| `minimax-m2.5` | Coding & productivity | State-of-the-art for real-world tasks |
+| `minimax-m2` | Agent workflows | High-efficiency coding |
+| `glm-5` | Complex reasoning | 744B total params (40B active) |
+| `qwen3-coder-next` | Multilingual coding | Optimized for development |
+| `qwen3.5` | Multimodal with tools | Vision + tools |
+| `gpt-oss:120b` | Large tasks | 120B parameters |
+| `deepseek-v3` | Advanced reasoning | Latest DeepSeek |
 
 Full list: https://ollama.com/search?c=cloud
 
@@ -43,7 +43,7 @@ Full list: https://ollama.com/search?c=cloud
 Add to your `.env` file:
 
 ```bash
-OLLAMA_API_KEY=your_api_key_here
+OLLAMA_API_KEY=""
 ```
 
 ### Step 3: Configure OpenClaw
@@ -57,12 +57,12 @@ OpenClaw will auto-configure Ollama Cloud during onboarding, or you can manually
   "agents": {
     "defaults": {
       "model": {
-        "primary": "ollama/kimi-k2.5:cloud",
-        "fallbacks": ["ollama/minimax-m2.5:cloud"]
+        "primary": "ollama/kimi-k2.5",
+        "fallbacks": ["ollama/minimax-m2.5"]
       },
       "models": {
-        "ollama/kimi-k2.5:cloud": { "alias": "kimi" },
-        "ollama/minimax-m2.5:cloud": { "alias": "minimax" }
+        "ollama/kimi-k2.5": { "alias": "kimi" },
+        "ollama/minimax-m2.5": { "alias": "minimax" }
       }
     }
   },
@@ -71,7 +71,7 @@ OpenClaw will auto-configure Ollama Cloud during onboarding, or you can manually
       "ollama": {
         "baseUrl": "https://ollama.com",
         "apiKey": "${OLLAMA_API_KEY}",
-        "api": "openai-completions"
+        "api": "ollama"
       }
     }
   }
@@ -88,7 +88,7 @@ pocketagent models status
 curl https://ollama.com/api/chat \
   -H "Authorization: Bearer $OLLAMA_API_KEY" \
   -d '{
-    "model": "kimi-k2.5:cloud",
+    "model": "kimi-k2.5",
     "messages": [{
       "role": "user",
       "content": "Hello!"
@@ -135,7 +135,7 @@ curl https://ollama.com/api/chat \
 ```json
 {
   "model": {
-    "primary": "ollama/kimi-k2.5:cloud"
+    "primary": "ollama/kimi-k2.5"
   }
 }
 ```
@@ -147,8 +147,8 @@ curl https://ollama.com/api/chat \
 ```json
 {
   "model": {
-    "primary": "ollama/minimax-m2.5:cloud",
-    "fallbacks": ["ollama/qwen3-coder-next:cloud"]
+    "primary": "ollama/minimax-m2.5",
+    "fallbacks": ["ollama/qwen3-coder-next"]
   }
 }
 ```
@@ -160,7 +160,7 @@ curl https://ollama.com/api/chat \
 ```json
 {
   "model": {
-    "primary": "ollama/glm-5:cloud"
+    "primary": "ollama/glm-5"
   }
 }
 ```
@@ -172,7 +172,7 @@ curl https://ollama.com/api/chat \
 ```json
 {
   "model": {
-    "primary": "ollama/minimax-m2:cloud"
+    "primary": "ollama/minimax-m2"
   }
 }
 ```
@@ -214,9 +214,9 @@ You can combine Ollama Cloud with other providers:
   "agents": {
     "defaults": {
       "model": {
-        "primary": "ollama/kimi-k2.5:cloud",
+        "primary": "ollama/kimi-k2.5",
         "fallbacks": [
-          "ollama/minimax-m2.5:cloud",
+          "ollama/minimax-m2.5",
           "anthropic/claude-sonnet-4-5",
           "openai/gpt-5.2-mini"
         ]
