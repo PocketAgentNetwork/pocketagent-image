@@ -30,12 +30,10 @@ docker compose up -d
 Install PocketAgent natively on your machine:
 
 ```bash
-# Download and run installer (allows personalization prompts)
-curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh -o install.sh
-bash install.sh
-
-# Or one-line install (uses defaults, customize later)
-curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash
+# Download and run installer (always gets latest version)
+curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh -o /tmp/pocketagent-install.sh
+bash /tmp/pocketagent-install.sh
+rm /tmp/pocketagent-install.sh
 
 # Start agent
 pocketagent start
