@@ -108,71 +108,96 @@ case "$1" in
         echo "📟 Updating PocketAgent..."
         echo ""
         
-        # Stop agent
-        if is_running; then
-            echo "  Stopping agent..."
-            "$0" stop
+        # Check current OpenClaw version
+        CURRENT_VERSION=""
+        if [ -f "$POCKETAGENT_ROOT/OPENCLAW_VERSION" ]; then
+            CURRENT_VERSION=$(cat "$POCKETAGENT_ROOT/OPENCLAW_VERSION")
         fi
         
-        # Backup current OpenClaw
-        if [ -d "$OPENCLAW_PATH" ]; then
-            BACKUP_NAME="openclaw.backup.$(date +%Y%m%d-%H%M%S)"
-            echo "  Backing up current version to: $BACKUP_NAME"
-            mv "$OPENCLAW_PATH" "$POCKETAGENT_ROOT/lib/$BACKUP_NAME"
-        fi
+        # Get latest tested OpenClaw version
+        echo "  Fetching latest OpenClaw version..."
+        LATEST_VERSION=$(curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/OPENCLAW_VERSION)
         
-        # Get tested OpenClaw version from PocketAgent repo
-        echo "  Fetching tested OpenClaw version..."
-        OPENCLAW_VERSION=$(curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/OPENCLAW_VERSION)
-        
-        if [ -z "$OPENCLAW_VERSION" ]; then
+        if [ -z "$LATEST_VERSION" ]; then
             echo "❌ Failed to fetch OpenClaw version"
-            echo "  Restoring backup..."
-            mv "$POCKETAGENT_ROOT/lib/$BACKUP_NAME" "$OPENCLAW_PATH"
             exit 1
         fi
         
-        echo "  Downloading OpenClaw $OPENCLAW_VERSION..."
-        cd "$POCKETAGENT_ROOT/lib"
+        echo "  Current: ${CURRENT_VERSION:-none}"
+        echo "  Latest:  $LATEST_VERSION"
         
-        # Download release tarball
-        if ! curl -fsSL "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz; then
-            echo "❌ Failed to download OpenClaw"
-            echo "  Restoring backup..."
-            mv "$POCKETAGENT_ROOT/lib/$BACKUP_NAME" "$OPENCLAW_PATH"
-            exit 1
+        # Only update OpenClaw if version changed
+        if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo ""
+            echo "  📦 Updating OpenClaw..."
+            
+            # Stop agent
+            if is_running; then
+                echo "  Stopping agent..."
+                "$0" stop
+            fi
+            
+            # Backup current OpenClaw
+            if [ -d "$OPENCLAW_PATH" ]; then
+                BACKUP_NAME="openclaw.backup.$(date +%Y%m%d-%H%M%S)"
+                echo "  Backing up to: $BACKUP_NAME"
+                mv "$OPENCLAW_PATH" "$POCKETAGENT_ROOT/lib/$BACKUP_NAME"
+            fi
+            
+            echo "  Downloading OpenClaw $LATEST_VERSION..."
+            cd "$POCKETAGENT_ROOT/lib"
+            
+            # Download release tarball
+            if ! curl -fsSL "https://github.com/openclaw/openclaw/archive/refs/tags/$LATEST_VERSION.tar.gz" -o openclaw.tar.gz; then
+                echo "❌ Failed to download OpenClaw"
+                if [ -d "$POCKETAGENT_ROOT/lib/$BACKUP_NAME" ]; then
+                    echo "  Restoring backup..."
+                    mv "$POCKETAGENT_ROOT/lib/$BACKUP_NAME" "$OPENCLAW_PATH"
+                fi
+                exit 1
+            fi
+            
+            # Extract
+            tar -xzf openclaw.tar.gz
+            mv "openclaw-${LATEST_VERSION#v}" openclaw
+            rm openclaw.tar.gz
+            
+            cd openclaw
+            
+            # Save version info
+            echo "$LATEST_VERSION" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
+            
+            # Build
+            echo "  Building OpenClaw..."
+            if ! pnpm install; then
+                echo "❌ Failed to install dependencies"
+                exit 1
+            fi
+            
+            if ! pnpm build; then
+                echo "❌ Failed to build OpenClaw"
+                exit 1
+            fi
+            
+            echo "  ✅ OpenClaw updated to $LATEST_VERSION"
+        else
+            echo "  ✅ OpenClaw already up to date"
         fi
         
-        # Extract
-        tar -xzf openclaw.tar.gz
-        mv "openclaw-${OPENCLAW_VERSION#v}" openclaw
-        rm openclaw.tar.gz
+        # Always update workspace files
+        echo ""
+        echo "  📝 Updating workspace..."
+        curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash -s workspace-update
         
-        cd openclaw
-        
-        # Save version info
-        echo "$OPENCLAW_VERSION" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
-        
-        # Build
-        echo "  Building OpenClaw..."
-        if ! pnpm install; then
-            echo "❌ Failed to install dependencies"
-            exit 1
+        # Restart if needed
+        if ! is_running; then
+            echo ""
+            echo "  Starting agent..."
+            "$0" start
         fi
-        
-        if ! pnpm build; then
-            echo "❌ Failed to build OpenClaw"
-            exit 1
-        fi
-        
-        # Restart
-        echo "  Restarting agent..."
-        "$0" start
         
         echo ""
-        echo "✅ Updated to OpenClaw $OPENCLAW_VERSION!"
-        echo "   Your data and settings are preserved."
-        echo "   Backup saved: $BACKUP_NAME"
+        echo "✅ PocketAgent update complete!"
         ;;
     
     fix-context)
