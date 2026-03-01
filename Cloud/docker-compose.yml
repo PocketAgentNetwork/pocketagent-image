@@ -60,11 +60,7 @@ services:
         max-file: "3"
 
     command: [
-      "pocketagent", "gateway",
-      "--workspace", "/home/node/.openclaw/workspace",
-      "--bind", "${OPENCLAW_GATEWAY_BIND:-lan}",
-      "--port", "${OPENCLAW_GATEWAY_PORT:-18789}",
-      "--allow-unconfigured",
+      "pocketagent", "gateway"
     ]
 
 volumes:

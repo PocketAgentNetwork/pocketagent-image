@@ -86,6 +86,17 @@ if [ -f "/home/node/.openclaw/openclaw.json" ]; then
         fi
     fi
     
+    # Check and fix context window if too small
+    echo "📝 Checking model context window..."
+    CONTEXT_WINDOW=$(grep -o '"contextWindow":[0-9]*' /home/node/.openclaw/openclaw.json | head -1 | cut -d: -f2)
+    if [ ! -z "$CONTEXT_WINDOW" ] && [ "$CONTEXT_WINDOW" -lt 16000 ]; then
+        echo "⚠️  Context window too small ($CONTEXT_WINDOW tokens). Updating to 128000..."
+        cd /pocketagent/lib/openclaw
+        node dist/index.js config set models.providers.pocketagent-local.models.0.contextWindow 128000 2>/dev/null || true
+        node dist/index.js config set models.providers.pocketagent-local.models.0.maxTokens 128000 2>/dev/null || true
+        echo "✅ Context window updated"
+    fi
+    
     # Run OpenClaw doctor to validate full config
     cd /pocketagent/lib/openclaw
     if node dist/index.js doctor --fix 2>/dev/null; then

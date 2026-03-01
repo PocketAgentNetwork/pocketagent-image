@@ -179,4 +179,4 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
   CMD curl -f http://localhost:18789/health || exit 1
 
 ENTRYPOINT ["/pocketagent/entrypoint.sh"]
-CMD ["pocketagent", "gateway", "--workspace", "/home/node/.openclaw/workspace", "--bind", "lan", "--port", "18789", "--allow-unconfigured"]
+CMD ["pocketagent", "gateway"]
