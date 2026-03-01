@@ -128,30 +128,32 @@ update_workspace() {
     local latest_version=$(curl -fsSL "$WORKSPACE_SOURCE/.workspace_version" 2>/dev/null || echo "0.0.0")
     
     if [ "$current_version" = "$latest_version" ]; then
-        echo "  Workspace is up to date (v$current_version)"
-        return 0
+        echo "  Workspace version up to date (v$current_version)"
+        echo "  Checking for missing files..."
+    else
+        echo "  Workspace update available: v$current_version → v$latest_version"
+        echo "  Updating system files (preserving user customizations)..."
     fi
     
-    echo "  Workspace update available: v$current_version → v$latest_version"
-    echo "  Updating system files (preserving user customizations)..."
-    
-    # System files that should be updated
-    local system_files=(
-        "SOUL.md"
-        "AGENTS.md"
-        "BOOTSTRAP.md"
-        "BOOT.md"
-        "TOOLS.md"
-    )
-    
-    # Backup and update system files
-    for file in "${system_files[@]}"; do
-        if [ -f "$workspace_dir/$file" ]; then
-            cp "$workspace_dir/$file" "$workspace_dir/${file}.backup" 2>/dev/null || true
-        fi
-        curl -fsSL "$WORKSPACE_SOURCE/$file" -o "$workspace_dir/$file" 2>/dev/null || true
-        echo "    ✓ Updated $file"
-    done
+    # System files that should be updated (only if version changed)
+    if [ "$current_version" != "$latest_version" ]; then
+        local system_files=(
+            "SOUL.md"
+            "AGENTS.md"
+            "BOOTSTRAP.md"
+            "BOOT.md"
+            "TOOLS.md"
+        )
+        
+        # Backup and update system files
+        for file in "${system_files[@]}"; do
+            if [ -f "$workspace_dir/$file" ]; then
+                cp "$workspace_dir/$file" "$workspace_dir/${file}.backup" 2>/dev/null || true
+            fi
+            curl -fsSL "$WORKSPACE_SOURCE/$file" -o "$workspace_dir/$file" 2>/dev/null || true
+            echo "    ✓ Updated $file"
+        done
+    fi
     
     # ⭐ NEW: Sync new skills and agents (don't overwrite existing)
     echo "  Syncing new skills and agents..."
@@ -190,10 +192,12 @@ update_workspace() {
     # Cleanup
     rm -rf "$temp_workspace"
     
-    # Update version file
-    echo "$latest_version" > "$WORKSPACE_VERSION_FILE"
+    # Update version file if changed
+    if [ "$current_version" != "$latest_version" ]; then
+        echo "$latest_version" > "$WORKSPACE_VERSION_FILE"
+    fi
     
-    echo "  ✅ Workspace updated to v$latest_version"
+    echo "  ✅ Workspace sync complete"
 }
 
 # ══════════════════════════════════════════════════════════════
