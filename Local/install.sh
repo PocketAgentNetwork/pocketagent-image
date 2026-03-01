@@ -63,6 +63,14 @@ download_workspace() {
     
     # Create directories
     mkdir -p "$dest"/{skills,agents,memory}
+    
+    # Download skills
+    echo "  Downloading skills..."
+    local skills=("agent-maker" "skill-maker")
+    for skill in "${skills[@]}"; do
+        mkdir -p "$dest/skills/$skill"
+        curl -fsSL "$WORKSPACE_SOURCE/skills/$skill/SKILL.md" -o "$dest/skills/$skill/SKILL.md" 2>/dev/null || true
+    done
 }
 
 personalize_workspace() {
