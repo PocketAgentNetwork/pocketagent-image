@@ -23,8 +23,8 @@ FROM node:22-bookworm
 
 # ── OpenClaw Version ──
 # Set which OpenClaw release to use
-# Override at build time: docker build --build-arg OPENCLAW_VERSION=v2026.2.27
-ARG OPENCLAW_VERSION=v2026.2.26
+# Override at build time: docker build --build-arg OPENCLAW_VERSION=v2026.3.2
+ARG OPENCLAW_VERSION=v2026.3.2
 
 # ── System Tools ──
 # Full dev environment for the agent
