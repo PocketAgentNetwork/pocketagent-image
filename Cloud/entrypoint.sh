@@ -18,14 +18,23 @@ if [ -d "/pocketagent/workspace_init" ]; then
     WORKSPACE_VERSION_FILE="/home/node/.openclaw/workspace/.workspace_version"
     IMAGE_VERSION_FILE="/pocketagent/workspace_init/.workspace_version"
     
+    # Ensure workspace directory exists
+    mkdir -p /home/node/.openclaw/workspace
+    
     # Check if workspace is empty (first run)
-    if [ -z "$(ls -A /home/node/.openclaw/workspace)" ]; then
+    if [ -z "$(ls -A /home/node/.openclaw/workspace 2>/dev/null)" ]; then
         echo "📦 First run - copying all workspace files..."
-        cp -r /pocketagent/workspace_init/* /home/node/.openclaw/workspace/
-        cp -r /pocketagent/workspace_init/.workspace_version /home/node/.openclaw/workspace/ 2>/dev/null || true
+        # Copy all files including hidden ones and subdirectories
+        cp -r /pocketagent/workspace_init/. /home/node/.openclaw/workspace/
+        
+        # Ensure subdirectories exist
+        mkdir -p /home/node/.openclaw/workspace/skills
+        mkdir -p /home/node/.openclaw/workspace/agents
+        mkdir -p /home/node/.openclaw/workspace/memory
+        
         echo "✅ PocketAgent workspace initialized."
     else
-        echo "🔄 Existing workspace found - checking for updates..."
+        echo "� Existing workspace found - checking for updates..."
         
         # Get versions
         CURRENT_VERSION=""
@@ -63,13 +72,23 @@ if [ -d "/pocketagent/workspace_init" ]; then
             cp "$IMAGE_VERSION_FILE" "$WORKSPACE_VERSION_FILE" 2>/dev/null || true
         fi
         
-        # Always sync new files/folders that don't exist yet
+        # Always sync new files/folders that don't exist yet (including skills and agents)
+        # This ensures new skills/agents from image updates are added
         rsync -a --ignore-existing /pocketagent/workspace_init/ /home/node/.openclaw/workspace/
+        
+        # Ensure subdirectories exist
+        mkdir -p /home/node/.openclaw/workspace/skills
+        mkdir -p /home/node/.openclaw/workspace/agents
+        mkdir -p /home/node/.openclaw/workspace/memory
         
         echo "✅ Workspace synced (user files preserved)."
     fi
 else
     echo "⚠️ No baked workspace found at /pocketagent/workspace_init"
+    echo "   Creating minimal workspace structure..."
+    mkdir -p /home/node/.openclaw/workspace/skills
+    mkdir -p /home/node/.openclaw/workspace/agents
+    mkdir -p /home/node/.openclaw/workspace/memory
 fi
 
 # ── Validate and fix config ──
