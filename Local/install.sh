@@ -27,6 +27,119 @@ check_installed() {
     [ -d "$INSTALL_DIR" ] && [ -f "$INSTALL_DIR/bin/pocketagent" ]
 }
 
+setup_autostart() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS - use launchd
+        local plist_file="$HOME/Library/LaunchAgents/com.pocketagent.plist"
+        
+        echo "  Creating launchd service for macOS..."
+        mkdir -p "$HOME/Library/LaunchAgents"
+        
+        cat > "$plist_file" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pocketagent</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$INSTALL_DIR/bin/pocketagent</string>
+        <string>start</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>$INSTALL_DIR/logs/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>$INSTALL_DIR/logs/launchd.err.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$INSTALL_DIR/bin</string>
+    </dict>
+</dict>
+</plist>
+EOF
+        
+        # Load the service
+        launchctl unload "$plist_file" 2>/dev/null || true
+        launchctl load "$plist_file"
+        
+        echo "  ✓ launchd service installed and enabled"
+        
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux - use systemd
+        local service_file="$HOME/.config/systemd/user/pocketagent.service"
+        
+        echo "  Creating systemd service for Linux..."
+        mkdir -p "$HOME/.config/systemd/user"
+        
+        cat > "$service_file" << EOF
+[Unit]
+Description=PocketAgent - Personal AI Agent
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=$INSTALL_DIR/bin/pocketagent start
+ExecStop=$INSTALL_DIR/bin/pocketagent stop
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:$INSTALL_DIR/logs/systemd.out.log
+StandardError=append:$INSTALL_DIR/logs/systemd.err.log
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:$INSTALL_DIR/bin"
+
+[Install]
+WantedBy=default.target
+EOF
+        
+        # Reload systemd and enable service
+        systemctl --user daemon-reload
+        systemctl --user enable pocketagent.service
+        
+        # Enable lingering so service runs even when user is not logged in
+        loginctl enable-linger "$USER" 2>/dev/null || true
+        
+        echo "  ✓ systemd service installed and enabled"
+    else
+        echo "  ⚠️  Auto-start not configured for this OS"
+        echo "     You'll need to manually start PocketAgent after reboot"
+    fi
+}
+
+remove_autostart() {
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS - remove launchd
+        local plist_file="$HOME/Library/LaunchAgents/com.pocketagent.plist"
+        
+        if [ -f "$plist_file" ]; then
+            echo "  Removing launchd service..."
+            launchctl unload "$plist_file" 2>/dev/null || true
+            rm "$plist_file"
+            echo "  ✓ launchd service removed"
+        fi
+        
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux - remove systemd
+        local service_file="$HOME/.config/systemd/user/pocketagent.service"
+        
+        if [ -f "$service_file" ]; then
+            echo "  Removing systemd service..."
+            systemctl --user stop pocketagent.service 2>/dev/null || true
+            systemctl --user disable pocketagent.service 2>/dev/null || true
+            rm "$service_file"
+            systemctl --user daemon-reload
+            echo "  ✓ systemd service removed"
+        fi
+    fi
+}
+
 get_workspace_version() {
     if [ -f "$WORKSPACE_VERSION_FILE" ]; then
         cat "$WORKSPACE_VERSION_FILE"
@@ -323,18 +436,54 @@ EOF
         echo "✓ pocketagent command already installed, skipping..."
     fi
     
-    # Fix model context window if config exists
+    # Fix model context window for ALL providers if config exists
     if [ -f "$INSTALL_DIR/home/.openclaw/openclaw.json" ]; then
-        echo "✓ Checking model context window..."
-        # Check if context window is too small
-        CONTEXT_WINDOW=$(grep -o '"contextWindow":[0-9]*' "$INSTALL_DIR/home/.openclaw/openclaw.json" | head -1 | cut -d: -f2)
-        if [ ! -z "$CONTEXT_WINDOW" ] && [ "$CONTEXT_WINDOW" -lt 16000 ]; then
-            echo "  Updating context window from $CONTEXT_WINDOW to 128000..."
-            export HOME="$INSTALL_DIR/home"
-            export XDG_CONFIG_HOME="$HOME/.openclaw"
-            "$INSTALL_DIR/bin/pocketagent" config set models.providers.pocketagent-local.models.0.contextWindow 128000 >/dev/null 2>&1 || true
-            "$INSTALL_DIR/bin/pocketagent" config set models.providers.pocketagent-local.models.0.maxTokens 128000 >/dev/null 2>&1 || true
-        fi
+        echo "✓ Checking model context windows for all providers..."
+        
+        # Use Python to fix all models with context < 16k
+        python3 << 'PYTHON_FIX'
+import json
+import sys
+
+config_file = "$INSTALL_DIR/home/.openclaw/openclaw.json"
+
+try:
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+    
+    fixed_count = 0
+    providers = config.get('models', {}).get('providers', {})
+    
+    for provider_name, provider_data in providers.items():
+        models = provider_data.get('models', [])
+        
+        for i, model in enumerate(models):
+            model_id = model.get('id', 'unknown')
+            context_window = model.get('contextWindow', 0)
+            
+            if context_window < 16000:
+                old_context = context_window
+                model['contextWindow'] = 128000
+                
+                # Set reasonable maxTokens
+                if model.get('maxTokens', 0) < 4096:
+                    model['maxTokens'] = 8192
+                
+                print(f"  Fixed {provider_name}/{model_id}: {old_context} → 128000 tokens")
+                fixed_count += 1
+    
+    if fixed_count > 0:
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+        print(f"  ✓ Updated {fixed_count} model(s)")
+    else:
+        print("  ✓ All models have sufficient context windows")
+        
+except Exception as e:
+    print(f"  ⚠️  Could not fix context windows: {e}", file=sys.stderr)
+    pass
+
+PYTHON_FIX
     fi
     
     # Add to PATH
@@ -350,6 +499,11 @@ EOF
         echo "export PATH=\"$INSTALL_DIR/bin:\$PATH\"" >> "$SHELL_RC"
     fi
     
+    # Setup auto-start daemon/service
+    echo ""
+    echo "✓ Setting up auto-start service..."
+    setup_autostart
+    
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "🎉 PocketAgent installed successfully!"
@@ -358,6 +512,10 @@ EOF
     echo "   $TOKEN"
     echo ""
     echo "   Save this! You'll need it to connect client apps."
+    echo ""
+    echo "🚀 Auto-Start: ENABLED"
+    echo "   PocketAgent will start automatically on boot"
+    echo "   To disable: pocketagent disable"
     echo ""
     echo "📋 Next Steps:"
     echo ""
@@ -426,6 +584,10 @@ cmd_uninstall() {
     
     # Stop agent
     "$INSTALL_DIR/bin/pocketagent" stop 2>/dev/null || true
+    
+    # Remove auto-start service
+    echo "Removing auto-start service..."
+    remove_autostart
     
     # Remove installation
     echo "Removing $INSTALL_DIR..."

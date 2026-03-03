@@ -58,3 +58,11 @@ __pycache__/
 *.pyc
 *.pyo
 .Python
+
+# NVIDIA API testing files
+nvidia_*.md
+nvidia_*.json
+test_nvidia_*.sh
+filter_models.py
+get_all_models.sh
+check_rate_limits.sh

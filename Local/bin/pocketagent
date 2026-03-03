@@ -245,6 +245,128 @@ case "$1" in
         node dist/index.js "$@"
         ;;
     
+    enable)
+        echo "📟 Enabling auto-start on boot..."
+        
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS - launchd
+            PLIST_FILE="$HOME/Library/LaunchAgents/com.pocketagent.plist"
+            
+            if [ ! -f "$PLIST_FILE" ]; then
+                echo "  Creating launchd service..."
+                mkdir -p "$HOME/Library/LaunchAgents"
+                
+                cat > "$PLIST_FILE" << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pocketagent</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$POCKETAGENT_ROOT/bin/pocketagent</string>
+        <string>start</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>$POCKETAGENT_ROOT/logs/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>$POCKETAGENT_ROOT/logs/launchd.err.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$POCKETAGENT_ROOT/bin</string>
+    </dict>
+</dict>
+</plist>
+EOF
+            fi
+            
+            launchctl unload "$PLIST_FILE" 2>/dev/null || true
+            launchctl load "$PLIST_FILE"
+            echo "✅ Auto-start enabled (launchd)"
+            
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux - systemd
+            SERVICE_FILE="$HOME/.config/systemd/user/pocketagent.service"
+            
+            if [ ! -f "$SERVICE_FILE" ]; then
+                echo "  Creating systemd service..."
+                mkdir -p "$HOME/.config/systemd/user"
+                
+                cat > "$SERVICE_FILE" << EOF
+[Unit]
+Description=PocketAgent - Personal AI Agent
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=$POCKETAGENT_ROOT/bin/pocketagent start
+ExecStop=$POCKETAGENT_ROOT/bin/pocketagent stop
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:$POCKETAGENT_ROOT/logs/systemd.out.log
+StandardError=append:$POCKETAGENT_ROOT/logs/systemd.err.log
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:$POCKETAGENT_ROOT/bin"
+
+[Install]
+WantedBy=default.target
+EOF
+            fi
+            
+            systemctl --user daemon-reload
+            systemctl --user enable pocketagent.service
+            loginctl enable-linger "$USER" 2>/dev/null || true
+            echo "✅ Auto-start enabled (systemd)"
+            
+        else
+            echo "❌ Auto-start not supported on this OS"
+            exit 1
+        fi
+        ;;
+    
+    disable)
+        echo "📟 Disabling auto-start on boot..."
+        
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS - launchd
+            PLIST_FILE="$HOME/Library/LaunchAgents/com.pocketagent.plist"
+            
+            if [ -f "$PLIST_FILE" ]; then
+                launchctl unload "$PLIST_FILE" 2>/dev/null || true
+                rm "$PLIST_FILE"
+                echo "✅ Auto-start disabled (launchd removed)"
+            else
+                echo "⚠️  Auto-start was not enabled"
+            fi
+            
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux - systemd
+            SERVICE_FILE="$HOME/.config/systemd/user/pocketagent.service"
+            
+            if [ -f "$SERVICE_FILE" ]; then
+                systemctl --user stop pocketagent.service 2>/dev/null || true
+                systemctl --user disable pocketagent.service 2>/dev/null || true
+                rm "$SERVICE_FILE"
+                systemctl --user daemon-reload
+                echo "✅ Auto-start disabled (systemd removed)"
+            else
+                echo "⚠️  Auto-start was not enabled"
+            fi
+            
+        else
+            echo "❌ Auto-start not supported on this OS"
+            exit 1
+        fi
+        ;;
+    
     --help|-h|help)
         cat << EOF
 📟 PocketAgent - Local AI Agent
@@ -260,6 +382,9 @@ Commands:
   update             Update to latest OpenClaw version
   version            Show current version
   fix-context        Fix model context window (set to 128k tokens)
+  
+  enable             Enable auto-start on boot
+  disable            Disable auto-start on boot
   
   doctor             Run diagnostics (--fix to auto-fix)
   models             Manage AI models
@@ -287,6 +412,8 @@ Examples:
   pocketagent models status
   pocketagent doctor --fix
   pocketagent fix-context
+  pocketagent enable    # Enable auto-start on boot
+  pocketagent disable   # Disable auto-start on boot
 
 Web UI: http://localhost:18789
 EOF

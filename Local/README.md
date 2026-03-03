@@ -110,8 +110,12 @@ pocketagent start
 # Stop agent
 pocketagent stop
 
-# Update to latest OpenClaw
-pocketagent update
+# Restart agent
+pocketagent restart
+
+# Manage auto-start
+pocketagent enable    # Enable auto-start on boot (default)
+pocketagent disable   # Disable auto-start on boot
 
 # View logs
 pocketagent logs
@@ -121,6 +125,8 @@ pocketagent logs
 ```
 http://localhost:18789
 ```
+
+**Auto-Start:** PocketAgent automatically starts when your computer boots (via launchd on macOS, systemd on Linux). See [AUTOSTART.md](./AUTOSTART.md) for details.
 
 ---
 
@@ -184,6 +190,8 @@ This will:
 - [plan.txt](./plan.txt) - Complete build plan
 - [task.txt](./task.txt) - Current development tasks
 - [PERSONALIZATION.md](./PERSONALIZATION.md) - Installer personalization feature
+- [AUTOSTART.md](./AUTOSTART.md) - Auto-start daemon/service documentation
+- [COMMANDS.md](./COMMANDS.md) - Full command reference
 
 ---
 

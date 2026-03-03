@@ -1,97 +1,90 @@
-# 📟 PocketAgent Local Commands
+# 📟 PocketAgent Commands Reference
 
-Quick reference for managing PocketAgent on your local machine.
+Complete command reference for managing your local PocketAgent installation.
 
 ---
 
-## 🎮 Basic Commands
+## Service Management
 
-### Start Agent
+### Start/Stop/Restart
+
 ```bash
+# Start PocketAgent
 pocketagent start
-```
 
-Starts PocketAgent in the background. Agent will be accessible at http://localhost:18789
-
-### Stop Agent
-```bash
+# Stop PocketAgent
 pocketagent stop
-```
 
-Stops the running PocketAgent service.
+# Restart PocketAgent
+pocketagent restart
 
-### Check Status
-```bash
+# Check if running
 pocketagent status
 ```
 
-Shows whether PocketAgent is currently running or stopped.
+### Auto-Start Management
 
-### View Logs
 ```bash
+# Enable auto-start on boot (default after installation)
+pocketagent enable
+
+# Disable auto-start on boot
+pocketagent disable
+```
+
+See [AUTOSTART.md](./AUTOSTART.md) for detailed auto-start documentation.
+
+---
+
+## Logs
+
+```bash
+# View last 50 lines of logs
 pocketagent logs
 
 # Follow logs in real-time
 pocketagent logs --follow
+pocketagent logs -f
 
-# Show last 100 lines
+# View last N lines
 pocketagent logs --tail 100
 ```
 
 ---
 
-## 🔄 Update Commands
+## Updates
 
-### Update to Latest Version
 ```bash
+# Update to latest OpenClaw version
 pocketagent update
-```
 
-**What this does:**
-1. Stops your agent
-2. Backs up current OpenClaw version (with timestamp)
-3. Downloads latest OpenClaw from GitHub
-4. Rebuilds everything
-5. Restarts your agent
-
-**Your data is safe!** All settings, memory, workspace files, and API keys are preserved.
-
-**Backup location:**
-```
-/Applications/PocketAgent/lib/openclaw.backup.YYYYMMDD
-```
-
-### Check Current Version
-```bash
+# Check current version
 pocketagent version
 ```
 
-Shows the current OpenClaw version installed.
+The update command:
+- Checks for new OpenClaw releases
+- Backs up current version
+- Downloads and builds new version
+- Updates workspace files (preserves customizations)
+- Restarts PocketAgent
 
 ---
 
-## 📟 Agent Management (OpenClaw CLI)
+## Configuration
 
-These commands interact with the agent itself:
-
-### Model Management
 ```bash
-# Check model status
-pocketagent models status
+# View configuration
+pocketagent config
 
-# List available models
-pocketagent models list
-
-# Switch to specific model
-pocketagent models use kimi-k2.5:cloud
-pocketagent models use minimax-m2.5:cloud
-
-# Set primary and fallback models
-pocketagent models set-primary kimi-k2.5:cloud
-pocketagent models set-fallback minimax-m2.5:cloud
+# Fix model context window (set to 128k tokens)
+pocketagent fix-context
 ```
 
-### Diagnostics
+---
+
+## Diagnostics
+
 ```bash
 # Run health check
 pocketagent doctor
@@ -103,222 +96,229 @@ pocketagent doctor --fix
 pocketagent health
 ```
 
-### Configuration
+---
+
+## Model Management
+
 ```bash
-# View all configuration
-pocketagent config show
+# Check model status
+pocketagent models status
 
-# Get specific config value
-pocketagent config get <key>
+# List available models
+pocketagent models list
 
-# Set config value
-pocketagent config set <key> <value>
+# Add a model
+pocketagent models add
+
+# Remove a model
+pocketagent models remove
 ```
 
-### Workspace Management
+---
+
+## Workspace Management
+
 ```bash
-# Show workspace info
-pocketagent workspace info
+# View workspace info
+pocketagent workspace
 
-# Backup workspace
-pocketagent workspace backup
-
-# Restore from backup
-pocketagent workspace restore <backup-file>
+# List workspace files
+pocketagent workspace list
 ```
 
-### Skills & Integrations
+---
+
+## Skills Management
+
 ```bash
 # List installed skills
 pocketagent skills list
 
-# Enable a skill
-pocketagent skills enable <skill-name>
+# Add a skill
+pocketagent skills add
 
-# Disable a skill
-pocketagent skills disable <skill-name>
+# Remove a skill
+pocketagent skills remove
+```
 
+---
+
+## Integrations
+
+```bash
 # List integrations
 pocketagent integrations list
 
-# Add integration
-pocketagent integrations add <integration-name>
-
-# Remove integration
-pocketagent integrations remove <integration-name>
+# Configure integration
+pocketagent integrations configure
 ```
 
-### Help
+---
+
+## Direct OpenClaw Commands
+
+PocketAgent wraps OpenClaw, so all OpenClaw commands work:
+
 ```bash
-# General help
+# Channel management
+pocketagent channels login
+pocketagent channels list
+
+# Send messages
+pocketagent message send --target +1234567890 --message "Hello"
+
+# Agent management
+pocketagent agents list
+pocketagent agents create
+
+# Browser control
+pocketagent browser open
+pocketagent browser close
+
+# And many more...
+```
+
+---
+
+## Installation Management
+
+```bash
+# Install PocketAgent
+curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash
+
+# Update PocketAgent
+curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash -s update
+
+# Uninstall PocketAgent
+curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash -s uninstall
+```
+
+Or if you have the script locally:
+
+```bash
+./install.sh install
+./install.sh update
+./install.sh uninstall
+```
+
+---
+
+## Help
+
+```bash
+# Show help
 pocketagent --help
-
-# Command-specific help
-pocketagent <command> --help
+pocketagent -h
+pocketagent help
 ```
 
 ---
 
-## 🗂️ File Locations
+## Installation Paths
 
-### Installation Directory
-```bash
-# macOS
+### macOS
+```
 /Applications/PocketAgent/
+├── bin/pocketagent          # Command wrapper
+├── lib/openclaw/            # OpenClaw framework
+├── home/                    # Agent's home directory
+│   ├── .openclaw/           # Config & workspace
+│   ├── files/               # Agent's files
+│   └── .local/bin/          # Installed tools
+├── data/                    # PocketAgent data
+└── logs/                    # Logs
+```
 
-# Linux
+### Linux
+```
 ~/.local/share/pocketagent/
-
-# Windows
-C:\Users\{username}\AppData\Local\PocketAgent\
-```
-
-### Important Paths
-```bash
-# Agent home (workspace, config, memory)
-/Applications/PocketAgent/home/
-
-# Workspace files (IDENTITY, SOUL, JOB, etc.)
-/Applications/PocketAgent/home/.openclaw/workspace/
-
-# Configuration
-/Applications/PocketAgent/home/.openclaw/openclaw.json
-
-# API keys and credentials
-/Applications/PocketAgent/home/.openclaw/.env
-
-# Logs
-/Applications/PocketAgent/logs/
-
-# OpenClaw installation
-/Applications/PocketAgent/lib/openclaw/
+├── bin/pocketagent          # Command wrapper
+├── lib/openclaw/            # OpenClaw framework
+├── home/                    # Agent's home directory
+│   ├── .openclaw/           # Config & workspace
+│   ├── files/               # Agent's files
+│   └── .local/bin/          # Installed tools
+├── data/                    # PocketAgent data
+└── logs/                    # Logs
 ```
 
 ---
 
-## 🔧 Advanced Commands
+## Environment Variables
 
-### Manual Backup
+PocketAgent uses these environment variables (set in `~/.openclaw/.env`):
+
 ```bash
-# Backup entire home directory
-tar -czf pocketagent-backup-$(date +%Y%m%d).tar.gz \
-  /Applications/PocketAgent/home/
-
-# Backup just workspace
-tar -czf workspace-backup-$(date +%Y%m%d).tar.gz \
-  /Applications/PocketAgent/home/.openclaw/workspace/
-```
-
-### Manual Restore
-```bash
-# Restore home directory
-tar -xzf pocketagent-backup-YYYYMMDD.tar.gz -C /
-
-# Restore workspace
-tar -xzf workspace-backup-YYYYMMDD.tar.gz -C /
-```
-
-### View Configuration Files
-```bash
-# View agent identity
-cat /Applications/PocketAgent/home/.openclaw/workspace/IDENTITY.md
-
-# View user info
-cat /Applications/PocketAgent/home/.openclaw/workspace/USER.md
-
-# View agent soul/personality
-cat /Applications/PocketAgent/home/.openclaw/workspace/SOUL.md
-
-# View job definition
-cat /Applications/PocketAgent/home/.openclaw/workspace/JOB.md
-```
-
-### Edit Configuration
-```bash
-# Edit identity
-nano /Applications/PocketAgent/home/.openclaw/workspace/IDENTITY.md
-
-# Edit user info
-nano /Applications/PocketAgent/home/.openclaw/workspace/USER.md
-
-# After editing, restart agent
-pocketagent stop
-pocketagent start
+OPENCLAW_GATEWAY_TOKEN=<your-token>
+OPENCLAW_GATEWAY_PORT=18789
+OPENCLAW_GATEWAY_BIND=127.0.0.1
 ```
 
 ---
 
-## 🚨 Troubleshooting
+## Web UI
 
-### Agent Won't Start
-```bash
-# Check if already running
-pocketagent status
+Access PocketAgent's web interface:
 
-# Check logs for errors
-pocketagent logs --tail 50
-
-# Try stopping and starting
-pocketagent stop
-sleep 2
-pocketagent start
+```
+http://localhost:18789
 ```
 
-### Port Already in Use
+Use your gateway token to authenticate (shown during installation).
+
+---
+
+## Troubleshooting
+
+### PocketAgent won't start
+
 ```bash
-# Check what's using port 18789
+# Check logs
+pocketagent logs --tail 100
+
+# Check if port is in use
 lsof -i :18789
 
-# Kill the process
-kill -9 <PID>
-
-# Or change port in config
-nano /Applications/PocketAgent/home/.openclaw/.env
-# Change OPENCLAW_GATEWAY_PORT=18789 to another port
+# Try restarting
+pocketagent restart
 ```
 
-### Reset to Defaults
+### Auto-start not working
+
+See [AUTOSTART.md](./AUTOSTART.md) for platform-specific troubleshooting.
+
+### Update failed
+
+```bash
+# Check logs
+pocketagent logs
+
+# Try manual update
+cd /Applications/PocketAgent/lib  # or ~/.local/share/pocketagent/lib on Linux
+rm -rf openclaw
+# Then run update again
+pocketagent update
+```
+
+### Reset configuration
+
 ```bash
 # Backup first!
-pocketagent workspace backup
+cp -r /Applications/PocketAgent/home/.openclaw /Applications/PocketAgent/home/.openclaw.backup
 
-# Stop agent
-pocketagent stop
-
-# Remove config (will regenerate)
+# Remove config
+rm /Applications/PocketAgent/home/.openclaw/.env
 rm /Applications/PocketAgent/home/.openclaw/openclaw.json
 
-# Start agent (will create fresh config)
-pocketagent start
-```
-
-### Complete Reinstall
-```bash
-# Backup your data first!
-tar -czf pocketagent-full-backup.tar.gz /Applications/PocketAgent/home/
-
-# Remove installation
-rm -rf /Applications/PocketAgent/
-
-# Run installer again
-curl -fsSL https://install.pocketagent.com | bash
+# Restart and reconfigure
+pocketagent restart
 ```
 
 ---
 
-## 💡 Tips
+## Support
 
-- **Always backup before updates:** `pocketagent workspace backup`
-- **Check logs if something's wrong:** `pocketagent logs --follow`
-- **Your data is in home/:** Everything persists across updates
-- **Web UI:** http://localhost:18789
-- **Gateway token:** Saved in `/Applications/PocketAgent/home/.openclaw/.env`
-
----
-
-## 🆘 Need Help?
-
-- Check logs: `pocketagent logs`
-- Run diagnostics: `pocketagent doctor --fix`
-- View help: `pocketagent --help`
-- See [README.md](./README.md) for more info
+- GitHub Issues: https://github.com/PocketAgentNetwork/pocketagent-image/issues
+- Documentation: [README.md](./README.md)
+- Auto-Start Guide: [AUTOSTART.md](./AUTOSTART.md)
+- Personalization: [PERSONALIZATION.md](./PERSONALIZATION.md)
