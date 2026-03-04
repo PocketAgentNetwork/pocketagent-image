@@ -155,8 +155,6 @@ RUN chmod +x /pocketagent/entrypoint.sh
 
 # ── Bake PocketAgent workspace into image (for seeding) ──
 COPY workspace /pocketagent/workspace_init
-# Explicitly copy hidden files (Docker COPY may skip them)
-COPY workspace/.workspace_version /pocketagent/workspace_init/.workspace_version 2>/dev/null || true
 
 # ── Verify workspace was copied correctly ──
 RUN echo "📦 Verifying workspace structure..." && \
