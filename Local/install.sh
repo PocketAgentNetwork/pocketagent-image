@@ -563,6 +563,28 @@ cmd_update() {
     echo "📟 Updating PocketAgent..."
     echo ""
     
+    # Update installer script itself
+    echo "✓ Updating installer script..."
+    INSTALLER_URL="https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh"
+    if curl -fsSL "$INSTALLER_URL" -o "$INSTALL_DIR/install.sh.new"; then
+        chmod +x "$INSTALL_DIR/install.sh.new"
+        mv "$INSTALL_DIR/install.sh.new" "$INSTALL_DIR/install.sh"
+        echo "  ✓ Installer script updated"
+    else
+        echo "  ⚠️  Failed to update installer script (continuing anyway)"
+    fi
+    
+    # Update pocketagent command script
+    echo "✓ Updating pocketagent command..."
+    POCKETAGENT_URL="https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/bin/pocketagent"
+    if curl -fsSL "$POCKETAGENT_URL" -o "$INSTALL_DIR/bin/pocketagent.new"; then
+        chmod +x "$INSTALL_DIR/bin/pocketagent.new"
+        mv "$INSTALL_DIR/bin/pocketagent.new" "$INSTALL_DIR/bin/pocketagent"
+        echo "  ✓ pocketagent command updated"
+    else
+        echo "  ⚠️  Failed to update pocketagent command (continuing anyway)"
+    fi
+    
     # Update OpenClaw
     echo "✓ Updating OpenClaw..."
     "$INSTALL_DIR/bin/pocketagent" update
