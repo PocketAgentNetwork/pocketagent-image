@@ -326,6 +326,23 @@ cmd_install() {
     if check_installed && [ -f "$INSTALL_DIR/home/.openclaw/.env" ]; then
         echo "✅ PocketAgent is already installed at: $INSTALL_DIR"
         echo ""
+        
+        # Check if daemon is set up
+        DAEMON_EXISTS=false
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            [ -f "$HOME/Library/LaunchAgents/com.pocketagent.plist" ] && DAEMON_EXISTS=true
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            [ -f "$HOME/.config/systemd/user/pocketagent.service" ] && DAEMON_EXISTS=true
+        fi
+        
+        if [ "$DAEMON_EXISTS" = false ]; then
+            echo "🔧 Auto-start daemon not found. Setting up..."
+            setup_autostart
+            echo ""
+            echo "✅ Auto-start daemon configured!"
+            echo ""
+        fi
+        
         echo "To update, run:"
         echo "  $0 update"
         echo ""
@@ -546,6 +563,28 @@ cmd_update() {
     echo "📟 Updating PocketAgent..."
     echo ""
     
+    # Update installer script itself
+    echo "✓ Updating installer script..."
+    INSTALLER_URL="https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh"
+    if curl -fsSL "$INSTALLER_URL" -o "$INSTALL_DIR/install.sh.new"; then
+        chmod +x "$INSTALL_DIR/install.sh.new"
+        mv "$INSTALL_DIR/install.sh.new" "$INSTALL_DIR/install.sh"
+        echo "  ✓ Installer script updated"
+    else
+        echo "  ⚠️  Failed to update installer script (continuing anyway)"
+    fi
+    
+    # Update pocketagent command script
+    echo "✓ Updating pocketagent command..."
+    POCKETAGENT_URL="https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/bin/pocketagent"
+    if curl -fsSL "$POCKETAGENT_URL" -o "$INSTALL_DIR/bin/pocketagent.new"; then
+        chmod +x "$INSTALL_DIR/bin/pocketagent.new"
+        mv "$INSTALL_DIR/bin/pocketagent.new" "$INSTALL_DIR/bin/pocketagent"
+        echo "  ✓ pocketagent command updated"
+    else
+        echo "  ⚠️  Failed to update pocketagent command (continuing anyway)"
+    fi
+    
     # Update OpenClaw
     echo "✓ Updating OpenClaw..."
     "$INSTALL_DIR/bin/pocketagent" update
@@ -553,6 +592,24 @@ cmd_update() {
     # Update workspace
     echo "✓ Checking workspace updates..."
     update_workspace
+    
+    # Check if daemon is set up
+    echo ""
+    echo "✓ Checking auto-start daemon..."
+    DAEMON_EXISTS=false
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        [ -f "$HOME/Library/LaunchAgents/com.pocketagent.plist" ] && DAEMON_EXISTS=true
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        [ -f "$HOME/.config/systemd/user/pocketagent.service" ] && DAEMON_EXISTS=true
+    fi
+    
+    if [ "$DAEMON_EXISTS" = false ]; then
+        echo "  Auto-start daemon not found. Setting up..."
+        setup_autostart
+        echo "  ✅ Auto-start daemon configured!"
+    else
+        echo "  ✅ Auto-start daemon already configured"
+    fi
     
     echo ""
     echo "✅ PocketAgent updated successfully!"
