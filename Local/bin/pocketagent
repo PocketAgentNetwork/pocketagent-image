@@ -180,8 +180,26 @@ case "$1" in
             echo "  Building OpenClaw..."
             cd openclaw
             
-            if ! pnpm install; then
+            # Ensure logs directory exists
+            mkdir -p "$POCKETAGENT_ROOT/logs"
+            
+            # Check if pnpm is available
+            if ! command -v pnpm >/dev/null 2>&1; then
+                echo "❌ pnpm not found. Installing pnpm..."
+                if ! npm install -g pnpm; then
+                    echo "❌ Failed to install pnpm"
+                    echo "  Restoring backup..."
+                    cd "$POCKETAGENT_ROOT/lib"
+                    rm -rf openclaw
+                    mv "$BACKUP_NAME" openclaw
+                    exit 1
+                fi
+            fi
+            
+            echo "  Installing dependencies (this may take a few minutes)..."
+            if ! pnpm install 2>&1 | tee "$POCKETAGENT_ROOT/logs/pnpm-install.log"; then
                 echo "❌ Failed to install dependencies"
+                echo "  Check logs: $POCKETAGENT_ROOT/logs/pnpm-install.log"
                 echo "  Restoring backup..."
                 cd "$POCKETAGENT_ROOT/lib"
                 rm -rf openclaw
@@ -189,8 +207,20 @@ case "$1" in
                 exit 1
             fi
             
-            if ! pnpm build; then
+            echo "  Building (this may take a few minutes)..."
+            if ! pnpm build 2>&1 | tee "$POCKETAGENT_ROOT/logs/pnpm-build.log"; then
                 echo "❌ Failed to build OpenClaw"
+                echo "  Check logs: $POCKETAGENT_ROOT/logs/pnpm-build.log"
+                echo "  Restoring backup..."
+                cd "$POCKETAGENT_ROOT/lib"
+                rm -rf openclaw
+                mv "$BACKUP_NAME" openclaw
+                exit 1
+            fi
+            
+            # Verify build succeeded
+            if [ ! -f "dist/index.js" ]; then
+                echo "❌ Build completed but dist/index.js not found"
                 echo "  Restoring backup..."
                 cd "$POCKETAGENT_ROOT/lib"
                 rm -rf openclaw

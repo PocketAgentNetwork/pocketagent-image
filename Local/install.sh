@@ -417,15 +417,39 @@ cmd_install() {
         cd openclaw
         
         echo "  Building OpenClaw..."
-        if ! pnpm install; then
+        
+        # Ensure logs directory exists
+        mkdir -p "$INSTALL_DIR/logs"
+        
+        # Check if pnpm is available
+        if ! command -v pnpm >/dev/null 2>&1; then
+            echo "  pnpm not found. Installing pnpm..."
+            if ! npm install -g pnpm; then
+                echo "❌ Failed to install pnpm"
+                exit 1
+            fi
+        fi
+        
+        echo "  Installing dependencies (this may take a few minutes)..."
+        if ! pnpm install 2>&1 | tee "$INSTALL_DIR/logs/pnpm-install.log"; then
             echo "❌ Failed to install dependencies"
+            echo "   Check logs: $INSTALL_DIR/logs/pnpm-install.log"
             echo "   Please check your internet connection and try again"
             exit 1
         fi
         
-        if ! pnpm build; then
+        echo "  Building (this may take a few minutes)..."
+        if ! pnpm build 2>&1 | tee "$INSTALL_DIR/logs/pnpm-build.log"; then
             echo "❌ Failed to build OpenClaw"
+            echo "   Check logs: $INSTALL_DIR/logs/pnpm-build.log"
             echo "   Please check the error messages above"
+            exit 1
+        fi
+        
+        # Verify build succeeded
+        if [ ! -f "dist/index.js" ]; then
+            echo "❌ Build completed but dist/index.js not found"
+            echo "   This is unexpected. Please report this issue."
             exit 1
         fi
         
