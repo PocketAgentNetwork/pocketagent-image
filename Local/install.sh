@@ -403,21 +403,34 @@ cmd_install() {
         echo "  Downloading OpenClaw $OPENCLAW_VERSION..."
         
         # Download release tarball with progress
-        curl -L --progress-bar "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz
+        if ! curl -L --progress-bar "https://github.com/openclaw/openclaw/archive/refs/tags/$OPENCLAW_VERSION.tar.gz" -o openclaw.tar.gz; then
+            echo "❌ Failed to download OpenClaw"
+            exit 1
+        fi
         
         # Extract
+        echo "  Extracting..."
         tar -xzf openclaw.tar.gz
         mv "openclaw-${OPENCLAW_VERSION#v}" openclaw
         rm openclaw.tar.gz
         
         cd openclaw
         
-        # Save version info
-        echo "$OPENCLAW_VERSION" > "$INSTALL_DIR/OPENCLAW_VERSION"
-        
         echo "  Building OpenClaw..."
-        pnpm install
-        pnpm build
+        if ! pnpm install; then
+            echo "❌ Failed to install dependencies"
+            echo "   Please check your internet connection and try again"
+            exit 1
+        fi
+        
+        if ! pnpm build; then
+            echo "❌ Failed to build OpenClaw"
+            echo "   Please check the error messages above"
+            exit 1
+        fi
+        
+        # Save version info only after successful build
+        echo "$OPENCLAW_VERSION" > "$INSTALL_DIR/OPENCLAW_VERSION"
     fi
     
     # Download and personalize workspace

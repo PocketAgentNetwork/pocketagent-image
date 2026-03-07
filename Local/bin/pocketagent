@@ -171,26 +171,35 @@ case "$1" in
             fi
             
             # Extract
+            echo "  Extracting..."
             tar -xzf openclaw.tar.gz
             mv "openclaw-${LATEST_VERSION#v}" openclaw
             rm openclaw.tar.gz
             
-            cd openclaw
-            
-            # Save version info
-            echo "$LATEST_VERSION" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
-            
             # Build
             echo "  Building OpenClaw..."
+            cd openclaw
+            
             if ! pnpm install; then
                 echo "❌ Failed to install dependencies"
+                echo "  Restoring backup..."
+                cd "$POCKETAGENT_ROOT/lib"
+                rm -rf openclaw
+                mv "$BACKUP_NAME" openclaw
                 exit 1
             fi
             
             if ! pnpm build; then
                 echo "❌ Failed to build OpenClaw"
+                echo "  Restoring backup..."
+                cd "$POCKETAGENT_ROOT/lib"
+                rm -rf openclaw
+                mv "$BACKUP_NAME" openclaw
                 exit 1
             fi
+            
+            # Save version info only after successful build
+            echo "$LATEST_VERSION" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
             
             echo "  ✅ OpenClaw updated to $LATEST_VERSION"
         else
@@ -232,6 +241,53 @@ case "$1" in
             # If update failed, continue with current script
             exec "$POCKETAGENT_ROOT/bin/pocketagent" update-continue
         fi
+        ;;
+    
+    fix-context)
+        echo "📟 Fixing model context window..."
+        cd "$OPENCLAW_PATH"
+        node dist/index.js config set models.providers.pocketagent-local.models.0.contextWindow 128000
+        node dist/index.js config set models.providers.pocketagent-local.models.0.maxTokens 128000
+        echo ""
+        echo "✅ Context window updated to 128000 tokens"
+        echo "   Restart PocketAgent to apply: pocketagent restart"
+        ;;
+    
+    restore-backup)
+        echo "📟 Restoring from backup..."
+        
+        # Find most recent backup
+        LATEST_BACKUP=$(ls -t "$POCKETAGENT_ROOT/lib" | grep "openclaw.backup" | head -1)
+        
+        if [ -z "$LATEST_BACKUP" ]; then
+            echo "❌ No backup found"
+            exit 1
+        fi
+        
+        echo "  Found backup: $LATEST_BACKUP"
+        read -p "  Restore this backup? (y/N): " -n 1 -r
+        echo
+        
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Restore cancelled"
+            exit 0
+        fi
+        
+        # Stop agent
+        if is_running; then
+            echo "  Stopping agent..."
+            "$0" stop
+        fi
+        
+        # Restore backup
+        echo "  Restoring..."
+        rm -rf "$OPENCLAW_PATH"
+        mv "$POCKETAGENT_ROOT/lib/$LATEST_BACKUP" "$OPENCLAW_PATH"
+        
+        echo "  ✅ Backup restored"
+        echo ""
+        echo "  Starting agent..."
+        "$0" start
         ;;
     
     fix-context)
@@ -414,6 +470,7 @@ Commands:
   status             Check if PocketAgent is running
   logs               View logs (--follow, --tail N)
   update             Update to latest OpenClaw version
+  restore-backup     Restore from most recent backup
   version            Show current version
   fix-context        Fix model context window (set to 128k tokens)
   
