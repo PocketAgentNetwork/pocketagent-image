@@ -144,8 +144,10 @@ case "$1" in
             echo ""
             echo "  📦 Updating OpenClaw..."
             
-            # Stop agent
+            # Remember if agent was running
+            AGENT_WAS_RUNNING=false
             if is_running; then
+                AGENT_WAS_RUNNING=true
                 echo "  Stopping agent..."
                 "$0" stop
             fi
@@ -232,6 +234,13 @@ case "$1" in
             echo "$LATEST_VERSION" > "$POCKETAGENT_ROOT/OPENCLAW_VERSION"
             
             echo "  ✅ OpenClaw updated to $LATEST_VERSION"
+            
+            # Restart agent if it was running before
+            if [ "$AGENT_WAS_RUNNING" = true ]; then
+                echo ""
+                echo "  Starting agent..."
+                "$0" start
+            fi
         else
             echo "  ✅ OpenClaw already up to date"
         fi
@@ -240,13 +249,6 @@ case "$1" in
         echo ""
         echo "  📝 Updating workspace..."
         curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash -s workspace-update
-        
-        # Restart if needed
-        if ! is_running; then
-            echo ""
-            echo "  Starting agent..."
-            "$0" start
-        fi
         
         echo ""
         echo "✅ PocketAgent update complete!"
