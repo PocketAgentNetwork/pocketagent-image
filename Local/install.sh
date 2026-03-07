@@ -362,6 +362,27 @@ cmd_install() {
     command -v node >/dev/null || { echo "❌ Node.js 22+ required"; exit 1; }
     command -v pnpm >/dev/null || { echo "Installing pnpm..."; npm install -g pnpm; }
     
+    # Check disk space (need ~2GB for OpenClaw + node_modules)
+    echo "✓ Checking disk space..."
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        AVAILABLE_MB=$(df -m / | tail -1 | awk '{print $4}')
+    else
+        AVAILABLE_MB=$(df -m / | tail -1 | awk '{print $4}')
+    fi
+    
+    if [ "$AVAILABLE_MB" -lt 2048 ]; then
+        echo "⚠️  Low disk space: ${AVAILABLE_MB}MB available"
+        echo "   OpenClaw needs ~2GB (source + node_modules + build)"
+        read -p "   Continue anyway? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo "Installation cancelled"
+            exit 1
+        fi
+    else
+        echo "   ${AVAILABLE_MB}MB available (need ~2GB)"
+    fi
+    
     # Create directories
     if [ ! -d "$INSTALL_DIR/home/.openclaw" ]; then
         echo "✓ Creating directories..."
