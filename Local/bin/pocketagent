@@ -332,12 +332,62 @@ case "$1" in
         ;;
     
     fix-context)
-        echo "📟 Fixing model context window..."
-        cd "$OPENCLAW_PATH"
-        node dist/index.js config set models.providers.pocketagent-local.models.0.contextWindow 128000
-        node dist/index.js config set models.providers.pocketagent-local.models.0.maxTokens 128000
+        echo "📟 Fixing model context windows..."
+        
+        CONFIG_FILE="$POCKETAGENT_HOME/.openclaw/openclaw.json"
+        
+        if [ ! -f "$CONFIG_FILE" ]; then
+            echo "❌ Config file not found: $CONFIG_FILE"
+            exit 1
+        fi
+        
+        # Use Python to fix all models with context < 16k
+        python3 << PYTHON_FIX
+import json
+import sys
+
+config_file = "$CONFIG_FILE"
+
+try:
+    with open(config_file, 'r') as f:
+        config = json.load(f)
+    
+    fixed_count = 0
+    providers = config.get('models', {}).get('providers', {})
+    
+    for provider_name, provider_data in providers.items():
+        models = provider_data.get('models', [])
+        
+        for i, model in enumerate(models):
+            model_id = model.get('id', 'unknown')
+            context_window = model.get('contextWindow', 0)
+            
+            if context_window < 16000:
+                old_context = context_window
+                model['contextWindow'] = 128000
+                
+                # Set reasonable maxTokens
+                if model.get('maxTokens', 0) < 4096:
+                    model['maxTokens'] = 8192
+                
+                print(f"  Fixed {provider_name}/{model_id}: {old_context} → 128000 tokens")
+                fixed_count += 1
+    
+    if fixed_count > 0:
+        with open(config_file, 'w') as f:
+            json.dump(config, f, indent=2)
+        print(f"  ✓ Updated {fixed_count} model(s)")
+    else:
+        print("  ✓ All models already have sufficient context windows")
+        
+except Exception as e:
+    print(f"  ⚠️  Could not fix context windows: {e}", file=sys.stderr)
+    sys.exit(1)
+
+PYTHON_FIX
+        
         echo ""
-        echo "✅ Context window updated to 128000 tokens"
+        echo "✅ Context window check complete"
         echo "   Restart PocketAgent to apply: pocketagent restart"
         ;;
     
