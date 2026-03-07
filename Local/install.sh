@@ -585,9 +585,9 @@ cmd_update() {
         echo "  ⚠️  Failed to update pocketagent command (continuing anyway)"
     fi
     
-    # Update OpenClaw
+    # Update OpenClaw (use update-continue to skip script self-update since we just did it)
     echo "✓ Updating OpenClaw..."
-    "$INSTALL_DIR/bin/pocketagent" update
+    "$INSTALL_DIR/bin/pocketagent" update-continue
     
     # Update workspace
     echo "✓ Checking workspace updates..."
