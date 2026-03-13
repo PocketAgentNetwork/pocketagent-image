@@ -20,6 +20,13 @@ Uses **systemd** (Linux service manager):
 - Runs even when you're not logged in (via `loginctl enable-linger`)
 - Restarts if it crashes
 
+### Windows
+Uses **Windows Startup folder**:
+- Startup script: `%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup\PocketAgent.bat`
+- Starts automatically on login
+- Runs in background via Git Bash
+- Simple batch script approach for maximum compatibility
+
 ### Windows (WSL)
 If you're using WSL (Windows Subsystem for Linux), the systemd service will work if you have systemd enabled in WSL2.
 
@@ -34,6 +41,9 @@ launchctl list | grep pocketagent
 
 # Linux
 systemctl --user status pocketagent.service
+
+# Windows
+ls "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup/" | grep PocketAgent
 ```
 
 ### Disable Auto-Start
@@ -93,6 +103,12 @@ tail -f ~/.local/share/pocketagent/logs/systemd.err.log
 journalctl --user -u pocketagent.service -f
 ```
 
+### Windows
+```bash
+# View startup logs (if PocketAgent was started via startup script)
+tail -f ~/AppData/Local/PocketAgent/logs/pocketagent.log
+```
+
 ---
 
 ## Troubleshooting
@@ -130,6 +146,19 @@ systemctl --user restart pocketagent.service
 journalctl --user -u pocketagent.service -n 50
 ```
 
+**Windows:**
+```bash
+# Check if startup script exists
+ls "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup/PocketAgent.bat"
+
+# Test startup script manually
+cd ~/AppData/Local/PocketAgent/bin
+bash pocketagent start
+
+# Check PocketAgent status
+pocketagent status
+```
+
 ### Disable auto-start temporarily
 
 **macOS:**
@@ -140,6 +169,12 @@ launchctl unload ~/Library/LaunchAgents/com.pocketagent.plist
 **Linux:**
 ```bash
 systemctl --user stop pocketagent.service
+```
+
+**Windows:**
+```bash
+# Stop PocketAgent (startup script will try to restart on next boot)
+pocketagent stop
 ```
 
 This stops the service but doesn't remove it. It will start again on next boot.
@@ -168,6 +203,13 @@ systemctl --user stop pocketagent.service
 systemctl --user disable pocketagent.service
 rm ~/.config/systemd/user/pocketagent.service
 systemctl --user daemon-reload
+```
+
+**Windows:**
+```bash
+# Remove startup script
+rm "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup/PocketAgent.bat"
+rm ~/AppData/Local/PocketAgent/bin/pocketagent-startup.bat
 ```
 
 ---

@@ -7,8 +7,17 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
     POCKETAGENT_ROOT="/Applications/PocketAgent"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Linux
-    POCKETAGENT_ROOT="$HOME/.local/share/pocketagent"
+    # Check if running in WSL (Windows Subsystem for Linux)
+    if grep -qi microsoft /proc/version 2>/dev/null || [ -n "$WSL_DISTRO_NAME" ]; then
+        # WSL detected - use Windows path
+        POCKETAGENT_ROOT="$HOME/AppData/Local/PocketAgent"
+    else
+        # Native Linux
+        POCKETAGENT_ROOT="$HOME/.local/share/pocketagent"
+    fi
+elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    # Windows (Git Bash, Cygwin, or native Windows)
+    POCKETAGENT_ROOT="$HOME/AppData/Local/PocketAgent"
 else
     echo "❌ Unsupported OS: $OSTYPE"
     exit 1
@@ -23,7 +32,14 @@ export XDG_CONFIG_HOME="$HOME/.openclaw"
 
 # Helper function to check if agent is running
 is_running() {
-    pgrep -f "openclaw.*gateway" > /dev/null
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        # Windows - use tasklist to check for node process
+        tasklist //FI "IMAGENAME eq node.exe" 2>/dev/null | grep -q "node.exe" && \
+        pgrep -f "openclaw.*gateway" > /dev/null 2>&1
+    else
+        # Unix-like systems
+        pgrep -f "openclaw.*gateway" > /dev/null
+    fi
 }
 
 # Main command handler
@@ -56,14 +72,27 @@ case "$1" in
         fi
         
         echo "📟 Stopping PocketAgent..."
-        pkill -f "openclaw.*gateway"
+        
+        if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+            # Windows - use taskkill
+            taskkill //F //IM node.exe //FI "WINDOWTITLE eq *openclaw*gateway*" 2>/dev/null || \
+            pkill -f "openclaw.*gateway" 2>/dev/null || true
+        else
+            # Unix-like systems
+            pkill -f "openclaw.*gateway"
+        fi
+        
         sleep 1
         
         if ! is_running; then
             echo "✅ PocketAgent stopped"
         else
             echo "⚠️  Force stopping..."
-            pkill -9 -f "openclaw.*gateway"
+            if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+                taskkill //F //IM node.exe 2>/dev/null || true
+            else
+                pkill -9 -f "openclaw.*gateway"
+            fi
             echo "✅ PocketAgent stopped"
         fi
         ;;
@@ -77,7 +106,12 @@ case "$1" in
     
     status)
         if is_running; then
-            PID=$(pgrep -f "openclaw.*gateway")
+            if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+                # Windows - get PID differently
+                PID=$(pgrep -f "openclaw.*gateway" 2>/dev/null || echo "unknown")
+            else
+                PID=$(pgrep -f "openclaw.*gateway")
+            fi
             echo "📟 PocketAgent is running (PID: $PID)"
             echo "🌐 Access at: http://localhost:18789"
         else
@@ -508,6 +542,38 @@ EOF
             loginctl enable-linger "$USER" 2>/dev/null || true
             echo "✅ Auto-start enabled (systemd)"
             
+        elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+            # Windows - create startup script and add to startup folder
+            echo "  Creating Windows startup script..."
+            
+            # Create a batch file to start PocketAgent
+            local startup_script="$POCKETAGENT_ROOT/bin/pocketagent-startup.bat"
+            cat > "$startup_script" << 'EOF'
+@echo off
+cd /d "%~dp0"
+bash pocketagent start
+EOF
+            
+            # Get Windows startup folder path
+            local startup_folder
+            if command -v cygpath >/dev/null 2>&1; then
+                # Cygwin environment
+                startup_folder=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
+            else
+                # Git Bash or other environments
+                startup_folder="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
+            fi
+            
+            # Create shortcut in startup folder
+            local shortcut_path="$startup_folder/PocketAgent.bat"
+            cat > "$shortcut_path" << EOF
+@echo off
+cd /d "$POCKETAGENT_ROOT/bin"
+bash pocketagent start
+EOF
+            
+            echo "✅ Auto-start enabled (Windows startup folder)"
+            
         else
             echo "❌ Auto-start not supported on this OS"
             exit 1
@@ -541,6 +607,31 @@ EOF
                 echo "✅ Auto-start disabled (systemd removed)"
             else
                 echo "⚠️  Auto-start was not enabled"
+            fi
+            
+        elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+            # Windows - remove startup script
+            echo "  Removing Windows startup script..."
+            
+            # Get Windows startup folder path
+            local startup_folder
+            if command -v cygpath >/dev/null 2>&1; then
+                startup_folder=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
+            else
+                startup_folder="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
+            fi
+            
+            local shortcut_path="$startup_folder/PocketAgent.bat"
+            if [ -f "$shortcut_path" ]; then
+                rm "$shortcut_path"
+                echo "✅ Auto-start disabled (Windows startup script removed)"
+            else
+                echo "⚠️  Auto-start was not enabled"
+            fi
+            
+            local startup_script="$POCKETAGENT_ROOT/bin/pocketagent-startup.bat"
+            if [ -f "$startup_script" ]; then
+                rm "$startup_script"
             fi
             
         else

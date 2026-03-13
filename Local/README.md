@@ -38,7 +38,7 @@ The installer will:
 
 ### v0.x: Shell Script Installer (In Development)
 - One-line terminal install
-- Works on Mac & Linux
+- Works on Mac, Linux & Windows
 - Installs agent as background service
 - Access via web browser
 - **Includes personalization!** (agent name, user name, etc.)
@@ -64,7 +64,7 @@ The installer will:
 ```
 /Applications/PocketAgent/          (Mac)
 ~/.local/share/pocketagent/         (Linux)
-C:\Users\...\AppData\Local\PocketAgent\  (Windows)
+%USERPROFILE%\AppData\Local\PocketAgent\  (Windows)
 
 ├── bin/
 │   └── pocketagent                 # Main executable
@@ -126,7 +126,7 @@ pocketagent logs
 http://localhost:18789
 ```
 
-**Auto-Start:** PocketAgent automatically starts when your computer boots (via launchd on macOS, systemd on Linux). See [AUTOSTART.md](./AUTOSTART.md) for details.
+**Auto-Start:** PocketAgent automatically starts when your computer boots (via launchd on macOS, systemd on Linux, startup folder on Windows). See [AUTOSTART.md](./AUTOSTART.md) for details.
 
 ---
 
@@ -201,10 +201,9 @@ This will:
 
 **Next Steps:**
 1. Build v0.x shell script installer
-2. Test on Mac & Linux
-3. Add Windows support
-4. Build GUI installer (v1.x)
-5. Build native app bundle (v2.x)
+2. Test on Mac, Linux & Windows
+3. Build GUI installer (v1.x)
+4. Build native app bundle (v2.x)
 
 ---
 

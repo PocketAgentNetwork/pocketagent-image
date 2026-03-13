@@ -10,7 +10,17 @@ SCRIPT_VERSION="0.0.1"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     INSTALL_DIR="/Applications/PocketAgent"
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    INSTALL_DIR="$HOME/.local/share/pocketagent"
+    # Check if running in WSL (Windows Subsystem for Linux)
+    if grep -qi microsoft /proc/version 2>/dev/null || [ -n "$WSL_DISTRO_NAME" ]; then
+        # WSL detected - use Windows path
+        INSTALL_DIR="$HOME/AppData/Local/PocketAgent"
+    else
+        # Native Linux
+        INSTALL_DIR="$HOME/.local/share/pocketagent"
+    fi
+elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    # Windows (Git Bash, Cygwin, or native Windows)
+    INSTALL_DIR="$HOME/AppData/Local/PocketAgent"
 else
     echo "❌ Unsupported OS: $OSTYPE"
     exit 1
@@ -107,6 +117,38 @@ EOF
         loginctl enable-linger "$USER" 2>/dev/null || true
         
         echo "  ✓ systemd service installed and enabled"
+    elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        # Windows - create startup script and add to startup folder
+        echo "  Creating Windows startup script..."
+        
+        # Create a batch file to start PocketAgent
+        local startup_script="$INSTALL_DIR/bin/pocketagent-startup.bat"
+        cat > "$startup_script" << 'EOF'
+@echo off
+cd /d "%~dp0"
+bash pocketagent start
+EOF
+        
+        # Get Windows startup folder path
+        local startup_folder
+        if command -v cygpath >/dev/null 2>&1; then
+            # Cygwin environment
+            startup_folder=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
+        else
+            # Git Bash or other environments
+            startup_folder="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
+        fi
+        
+        # Create shortcut in startup folder
+        local shortcut_path="$startup_folder/PocketAgent.bat"
+        cat > "$shortcut_path" << EOF
+@echo off
+cd /d "$INSTALL_DIR/bin"
+bash pocketagent start
+EOF
+        
+        echo "  ✓ Windows startup script created"
+        echo "  ✓ Added to Windows startup folder"
     else
         echo "  ⚠️  Auto-start not configured for this OS"
         echo "     You'll need to manually start PocketAgent after reboot"
@@ -136,6 +178,28 @@ remove_autostart() {
             rm "$service_file"
             systemctl --user daemon-reload
             echo "  ✓ systemd service removed"
+        fi
+    elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        # Windows - remove startup script
+        echo "  Removing Windows startup script..."
+        
+        # Get Windows startup folder path
+        local startup_folder
+        if command -v cygpath >/dev/null 2>&1; then
+            startup_folder=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
+        else
+            startup_folder="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
+        fi
+        
+        local shortcut_path="$startup_folder/PocketAgent.bat"
+        if [ -f "$shortcut_path" ]; then
+            rm "$shortcut_path"
+            echo "  ✓ Windows startup script removed"
+        fi
+        
+        local startup_script="$INSTALL_DIR/bin/pocketagent-startup.bat"
+        if [ -f "$startup_script" ]; then
+            rm "$startup_script"
         fi
     fi
 }
@@ -359,7 +423,15 @@ cmd_install() {
     
     # Check prerequisites
     echo "✓ Checking prerequisites..."
-    command -v node >/dev/null || { echo "❌ Node.js 22+ required"; exit 1; }
+    
+    # Check for node (handle both Unix and Windows executables)
+    if ! command -v node >/dev/null 2>&1; then
+        if ! command -v node.exe >/dev/null 2>&1; then
+            echo "❌ Node.js 22+ required"
+            exit 1
+        fi
+    fi
+    
     command -v pnpm >/dev/null || { echo "Installing pnpm..."; npm install -g pnpm; }
     
     # Check disk space (need ~2GB for OpenClaw + node_modules)
@@ -565,11 +637,18 @@ PYTHON_FIX
     # Add to PATH
     if [[ "$OSTYPE" == "darwin"* ]]; then
         SHELL_RC="$HOME/.zshrc"
-    else
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         SHELL_RC="$HOME/.bashrc"
+    elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        # Windows - add to .bashrc (Git Bash) or .bash_profile
+        if [ -f "$HOME/.bashrc" ]; then
+            SHELL_RC="$HOME/.bashrc"
+        else
+            SHELL_RC="$HOME/.bash_profile"
+        fi
     fi
     
-    if ! grep -q "PocketAgent/bin" "$SHELL_RC" 2>/dev/null; then
+    if [ -n "$SHELL_RC" ] && ! grep -q "PocketAgent/bin" "$SHELL_RC" 2>/dev/null; then
         echo "" >> "$SHELL_RC"
         echo "# PocketAgent" >> "$SHELL_RC"
         echo "export PATH=\"$INSTALL_DIR/bin:\$PATH\"" >> "$SHELL_RC"
