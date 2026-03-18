@@ -51,6 +51,15 @@ case "$1" in
         fi
         
         echo "📟 Starting PocketAgent..."
+        
+        # Load .env if it exists
+        ENV_FILE="$POCKETAGENT_HOME/.openclaw/.env"
+        if [ -f "$ENV_FILE" ]; then
+            set -a
+            source "$ENV_FILE"
+            set +a
+        fi
+        
         nohup node "$OPENCLAW_PATH/dist/index.js" gateway \
             >> "$LOG_FILE" 2>&1 &
         
@@ -292,6 +301,32 @@ case "$1" in
         echo ""
         echo "  📝 Updating workspace..."
         curl -fsSL https://raw.githubusercontent.com/PocketAgentNetwork/pocketagent-image/main/Local/install.sh | bash -s workspace-update
+        
+        # Check and set up auto-start daemon if missing
+        echo ""
+        echo "✓ Checking auto-start daemon..."
+        DAEMON_EXISTS=false
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            [ -f "$HOME/Library/LaunchAgents/com.pocketagent.plist" ] && DAEMON_EXISTS=true
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            [ -f "$HOME/.config/systemd/user/pocketagent.service" ] && DAEMON_EXISTS=true
+        elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+            WIN_STARTUP_FOLDER=""
+            if command -v cygpath >/dev/null 2>&1; then
+                WIN_STARTUP_FOLDER=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
+            else
+                WIN_STARTUP_FOLDER="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
+            fi
+            [ -f "$WIN_STARTUP_FOLDER/PocketAgent.bat" ] && DAEMON_EXISTS=true
+        fi
+        
+        if [ "$DAEMON_EXISTS" = false ]; then
+            echo "  Auto-start daemon not found. Setting up..."
+            "$0" enable
+            echo "  ✅ Auto-start daemon configured!"
+        else
+            echo "  ✅ Auto-start daemon already configured"
+        fi
         
         echo ""
         echo "✅ PocketAgent update complete!"
@@ -547,30 +582,27 @@ EOF
             echo "  Creating Windows startup script..."
             
             # Create a batch file to start PocketAgent
-            local startup_script="$POCKETAGENT_ROOT/bin/pocketagent-startup.bat"
-            cat > "$startup_script" << 'EOF'
+            WIN_STARTUP_SCRIPT="$POCKETAGENT_ROOT/bin/pocketagent-startup.bat"
+            cat > "$WIN_STARTUP_SCRIPT" << 'WEOF'
 @echo off
 cd /d "%~dp0"
 bash pocketagent start
-EOF
+WEOF
             
             # Get Windows startup folder path
-            local startup_folder
+            WIN_STARTUP_FOLDER=""
             if command -v cygpath >/dev/null 2>&1; then
-                # Cygwin environment
-                startup_folder=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
+                WIN_STARTUP_FOLDER=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
             else
-                # Git Bash or other environments
-                startup_folder="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
+                WIN_STARTUP_FOLDER="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
             fi
             
             # Create shortcut in startup folder
-            local shortcut_path="$startup_folder/PocketAgent.bat"
-            cat > "$shortcut_path" << EOF
+            cat > "$WIN_STARTUP_FOLDER/PocketAgent.bat" << WEOF
 @echo off
 cd /d "$POCKETAGENT_ROOT/bin"
 bash pocketagent start
-EOF
+WEOF
             
             echo "✅ Auto-start enabled (Windows startup folder)"
             
@@ -613,25 +645,23 @@ EOF
             # Windows - remove startup script
             echo "  Removing Windows startup script..."
             
-            # Get Windows startup folder path
-            local startup_folder
+            WIN_STARTUP_FOLDER=""
             if command -v cygpath >/dev/null 2>&1; then
-                startup_folder=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
+                WIN_STARTUP_FOLDER=$(cygpath -u "$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup")
             else
-                startup_folder="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
+                WIN_STARTUP_FOLDER="$APPDATA/Microsoft/Windows/Start Menu/Programs/Startup"
             fi
             
-            local shortcut_path="$startup_folder/PocketAgent.bat"
-            if [ -f "$shortcut_path" ]; then
-                rm "$shortcut_path"
+            if [ -f "$WIN_STARTUP_FOLDER/PocketAgent.bat" ]; then
+                rm "$WIN_STARTUP_FOLDER/PocketAgent.bat"
                 echo "✅ Auto-start disabled (Windows startup script removed)"
             else
                 echo "⚠️  Auto-start was not enabled"
             fi
             
-            local startup_script="$POCKETAGENT_ROOT/bin/pocketagent-startup.bat"
-            if [ -f "$startup_script" ]; then
-                rm "$startup_script"
+            WIN_STARTUP_SCRIPT="$POCKETAGENT_ROOT/bin/pocketagent-startup.bat"
+            if [ -f "$WIN_STARTUP_SCRIPT" ]; then
+                rm "$WIN_STARTUP_SCRIPT"
             fi
             
         else
