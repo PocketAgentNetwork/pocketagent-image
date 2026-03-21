@@ -59,6 +59,9 @@ __pycache__/
 *.pyo
 .Python
 
+# AWS deployment docs
+Cloud/AWS_DEPLOYMENT.md
+
 # NVIDIA API testing files
 nvidia_*.md
 nvidia_*.json
