@@ -2,86 +2,88 @@
 
 > NVIDIA announced NemoClaw at GTC 2026 (March 16, 2026).
 > It's built on top of OpenClaw — the same engine we run.
-> This doc breaks down what they built, why it matters, and what we should steal.
-> GitHub: [NVIDIA/OpenShell-Community](https://github.com/NVIDIA/OpenShell-Community) (Apache 2.0)
+> Repo: [github.com/NVIDIA/NemoClaw](https://github.com/NVIDIA/NemoClaw) (Apache 2.0, early preview)
+> Docs: [docs.nvidia.com/nemoclaw](https://docs.nvidia.com/nemoclaw/latest/)
 
 ---
 
-## What NemoClaw Actually Is
+## What It Actually Is (From the Repo)
 
-NemoClaw is not a new agent framework. It's a **security and policy layer on top of OpenClaw**.
+NemoClaw is not a new agent framework. It's a **security and policy layer on top of OpenClaw** — a reference stack that adds sandboxing, network policy, and inference routing in a single install command.
 
-NVIDIA's stack:
-```
-Browser (port 18789)
-       │
-       ▼
-policy-proxy.js  ← intercepts /api/policy (read/write policy.yaml at runtime)
-       │
-       ▼
-OpenClaw Gateway (port 18788)
-       │
-       ▼
-OpenShell Gateway (k3s harness) ← out-of-process policy enforcement
-       │
-       ▼
-NVIDIA Inference Endpoints (Nemotron, Kimi K2.5, DeepSeek V3.2)
+```bash
+curl -fsSL https://www.nvidia.com/nemoclaw.sh | bash
 ```
 
-Three core components (from the actual repo):
-1. **OpenShell runtime** — sandboxed execution layer. Kernel-level isolation via Linux Landlock. Every file access, network call, and inference request is governed by a declarative `policy.yaml`. Runs as a separate process — the agent cannot override it even if compromised.
-2. **NemoClaw Plugin** — a thin TypeScript package that registers commands under `openclaw nemoclaw`. Handles CLI interactions in-process with the OpenClaw gateway.
-3. **NemoClaw Blueprint** — a versioned Python artifact that orchestrates OpenShell resources (gateway, providers, sandbox, inference route, policy). The plugin resolves, verifies digest, and executes the blueprint as a subprocess.
+That one command installs OpenShell, pulls Nemotron models, creates a sandboxed OpenClaw instance, and applies security policies. When done, you get:
 
-The repo structure (`NVIDIA/OpenShell-Community`) contains:
 ```
-sandboxes/
-  base/          ← foundational image, system tools, dev environment
-  ollama/        ← local + cloud LLMs, Claude Code, Codex pre-installed
-  sdg/           ← synthetic data generation workflows
-  openclaw/      ← OpenClaw sandbox (what NemoClaw builds on)
-  openclaw-nvidia/ ← NemoClaw DevX extension layered on top
-brev/            ← one-click cloud deployment launchable
+──────────────────────────────────────────────────
+Sandbox      my-assistant (Landlock + seccomp + netns)
+Model        nvidia/nemotron-3-super-120b-a12b (NVIDIA Cloud API)
+──────────────────────────────────────────────────
+Run:         nemoclaw my-assistant connect
+Status:      nemoclaw my-assistant status
+Logs:        nemoclaw my-assistant logs --follow
+──────────────────────────────────────────────────
 ```
 
 ---
 
-## The Critical Architectural Insight From the Repo
+## The Architecture (How It Fits Together)
 
-The most important thing NVIDIA figured out — and it's in the OpenShell blog post explicitly:
-
-> "The critical failure mode: guardrails living inside the same process they're supposed to be guarding."
-
-Every existing agent runtime (including our current setup) has security logic inside the agent. A compromised agent can bypass it. OpenShell moves the control point **entirely outside the agent's reach** — out-of-process policy enforcement. The agent literally cannot override it.
-
-This is the browser tab model applied to agents:
-- Sessions are isolated
-- Permissions are verified by the runtime before any action executes
-- Policy updates happen live at sandbox scope with a full audit trail of every allow/deny
-
-The blueprint lifecycle from the actual repo:
 ```
-resolve → verify digest → plan → apply → status
+nemoclaw onboard
+       │
+       ▼
+nemoclaw plugin (TypeScript)
+       │
+       ▼
+blueprint runner (versioned Python artifact)
+       │
+       ▼
+openshell CLI (sandbox · gateway · inference · policy)
+       │
+       ▼
+┌─────────────────────────────────┐
+│        OpenShell Sandbox        │
+│  OpenClaw agent                 │
+│  ├── NVIDIA inference (routed)  │
+│  ├── strict network policy      │
+│  └── filesystem isolation       │
+└─────────────────────────────────┘
 ```
-The plugin resolves the blueprint artifact, checks version compatibility (`min_openshell_version`, `min_openclaw_version`), verifies the digest, then the Python runner determines what OpenShell resources to create/update and executes them via `openshell` CLI calls.
+
+Three components:
+
+| Component | What It Does |
+|-----------|-------------|
+| Plugin | Thin TypeScript CLI — `nemoclaw` commands + `openclaw nemoclaw` subcommands |
+| Blueprint | Versioned Python artifact — orchestrates sandbox creation, policy, inference setup |
+| Sandbox | Isolated OpenShell container running OpenClaw with enforced egress + filesystem |
+
+The **thin plugin / versioned blueprint** split is a key design decision. The plugin stays small and stable. All orchestration logic lives in the blueprint on its own release cadence. Blueprint artifacts are immutable, versioned, and digest-verified before execution — supply chain safety built in.
 
 ---
 
-## The Policy System (The Real Innovation)
+## The Protection Layers (From the Actual Repo)
 
-This is the part worth studying closely.
+Four layers, two hot-reloadable at runtime:
 
-`policy.yaml` defines what the agent can and cannot do at the kernel level:
+| Layer | What It Protects | Hot-Reload? |
+|-------|-----------------|-------------|
+| Network | Blocks unauthorized outbound connections | ✅ Yes |
+| Filesystem | Prevents reads/writes outside `/sandbox` and `/tmp` | ❌ Locked at creation |
+| Process | Blocks privilege escalation + dangerous syscalls | ❌ Locked at creation |
+| Inference | Reroutes model API calls to controlled backends | ✅ Yes |
 
+When the agent tries to reach an unlisted host, OpenShell **blocks the request and surfaces it in the TUI for operator approval**. Approved endpoints persist for the current session but are not saved to the baseline policy — you have to explicitly promote them.
+
+The baseline policy (`openclaw-sandbox.yaml`):
 ```yaml
 filesystem_policy:
-  read_only:
-    - /usr
-    - /lib
-    - /etc
-  read_write:
-    - /sandbox
-    - /tmp
+  read_only: [/usr, /lib, /etc]
+  read_write: [/sandbox, /tmp]
 
 network_policies:
   nvidia:
@@ -89,6 +91,7 @@ network_policies:
       - { host: integrate.api.nvidia.com, port: 443 }
     binaries:
       - { path: /usr/bin/python3 }
+      - { path: /usr/local/bin/openclaw }
 
   github_rest_api:
     endpoints:
@@ -103,108 +106,132 @@ network_policies:
       - { path: /usr/local/bin/openclaw }
 ```
 
-Key design decisions:
-- **Binary-scoped network enforcement** — outbound connections are tied to a specific binary path, not just a process name. `/usr/bin/python3` can hit NVIDIA APIs. `/usr/bin/node` cannot (unless you say so).
-- **L7 REST enforcement** — GitHub access is whitelisted by HTTP method + URL path pattern. Not just host/port.
-- **TLS termination** — the proxy inspects requests before forwarding. Real L7 policy, not just firewall rules.
-- **Runtime policy updates** — the policy proxy exposes `/api/policy` so the UI can update `policy.yaml` without rebuilding the container.
-- **Landlock `best_effort`** — degrades gracefully on kernels without Landlock support rather than hard-failing.
+Key details:
+- **Binary-scoped network enforcement** — connections tied to specific executable paths, not just process names
+- **L7 REST enforcement** — GitHub access whitelisted by HTTP method + URL path pattern
+- **TLS termination** — proxy inspects requests before forwarding, real L7 policy not just firewall rules
+- **Landlock + seccomp + netns** — three kernel-level isolation mechanisms stacked
 
 ---
 
-## What They Got Right
+## The Critical Insight (Why This Matters)
 
-### 1. The Privacy Router
-NemoClaw routes inference calls through a privacy router that decides: local model or cloud model, based on the sensitivity of the request. The agent can use frontier cloud models for general tasks but falls back to local Nemotron models for anything touching private data.
+From the NVIDIA OpenShell blog post — they named the failure mode explicitly:
 
-**For PocketAgent:** We already have PocketModel for failover. We should add a sensitivity-aware routing layer — not just "is the API down?" but "should this request leave the device at all?"
+> "The critical failure mode: guardrails living inside the same process they're supposed to be guarding."
 
-### 2. Zero-Fork UI Extension Pattern
-NVIDIA ships enterprise UI features (model selector, deploy modal, API keys page, nav group) as a TypeScript extension injected via MutationObserver — without forking OpenClaw's source. This means they track upstream OpenClaw releases automatically.
+Every existing agent runtime (including our current setup) has security logic **inside** the agent. A compromised agent can bypass it. OpenShell moves the control point **entirely outside the agent's reach** — out-of-process policy enforcement. The agent literally cannot override its own constraints.
 
-**For PocketAgent:** Our client should follow the same pattern. Don't fork OpenClaw's UI. Build our experience as an extension layer on top. This keeps us compatible with every OpenClaw update.
-
-### 3. Runtime Policy Without Rebuilds
-The policy proxy lets you change security rules at runtime via the UI. No container rebuild. No restart. Just update `policy.yaml` and it's live.
-
-**For PocketAgent:** Our entrypoint.sh does config validation at startup but nothing is changeable at runtime without a restart. A lightweight policy/config proxy would be a real UX improvement — especially for the managed cloud tier.
-
-### 4. Binary-Scoped Network Enforcement
-Most sandboxes do IP allowlisting. NemoClaw ties network permissions to specific executable paths. This is a much stronger security model — a compromised Python script can't suddenly start calling home if Python isn't in the network policy.
-
-**For PocketAgent:** Worth implementing in the Cloud image. Our current setup has no network enforcement at all. Even a basic allowlist of known-good endpoints would be a meaningful security upgrade.
-
-### 5. MIG Isolation for Multi-Agent
-On Jetson Thor, NemoClaw uses NVIDIA's Multi-Instance GPU (MIG) to give each agent its own isolated compute slice. No agent starves another.
-
-**For PocketAgent (PAN):** When we run multiple agents on the same node (PAN infrastructure), we need resource isolation. MIG is GPU-specific but the concept applies — CPU/memory cgroups per agent container, enforced at the host level.
-
-### 6. Single-Command Install
-```bash
-nemoclaw install
-```
-That's it. Installs OpenShell, pulls Nemotron models, configures the sandbox, starts the gateway.
-
-**For PocketAgent:** Our `install.sh` is already close to this. But the experience should be even tighter — one command, zero questions, agent is live. The personalization step (name, timezone) can happen inside the agent's first conversation, not during install.
-
-### 7. Synthetic Data Generation Sandbox
-The repo has a `sandboxes/sdg/` — synthetic data generation workflows. The agent generates synthetic data to fix edge cases and iterates through thousands of failures in isolated sandboxes. This is how the agent self-improves without touching production data.
-
-**For PocketAgent:** The MEMORY.md + HEARTBEAT.md system is our version of this. But we could go further — let the agent run simulated task scenarios in an isolated sandbox to improve its own skills before deploying them live.
+This is the browser tab model applied to agents:
+- Sessions are isolated
+- Permissions are verified by the runtime before any action executes
+- Policy updates happen live at sandbox scope with a full audit trail
 
 ---
 
-### Enterprise-first = friction-first
-NemoClaw is built for IT departments, not individuals. The policy system is powerful but complex. The target user is a Cisco security engineer, not someone who wants a personal agent in 60 seconds.
+## The Inference Routing
 
-**Our lane:** Sovereign, personal, zero-friction. The individual is the enterprise.
+Inference requests from the agent **never leave the sandbox directly**. OpenShell intercepts every call and routes it to the configured provider. The agent doesn't know or care — it just calls the model API as normal.
 
-### GPU dependency
-NemoClaw is optimized for NVIDIA hardware. DGX Spark, DGX Station, Jetson Thor. The local model story requires serious hardware.
+Current provider:
 
-**Our lane:** PocketModel's failover stack means you get a capable agent on a $7/month VPS or a 3-year-old laptop. No GPU required.
+| Provider | Model | Notes |
+|----------|-------|-------|
+| NVIDIA cloud | `nvidia/nemotron-3-super-120b-a12b` | Requires API key from build.nvidia.com |
 
-### No network / social layer
-NemoClaw is a single-agent deployment story. There's no concept of agents talking to each other, hiring each other, or forming a network.
+Local inference (Ollama, vLLM) is experimental and not fully supported yet on macOS. This is actually a gap we can exploit — our PocketModel failover stack works today without GPU.
 
-**Our lane:** PAN is the moat. Agent-to-agent communication, the skills marketplace, the social graph — none of that exists in NemoClaw.
+You can switch models at runtime without restarting the sandbox. That's the hot-reload inference layer.
 
-### OpenAI-owned foundation
-OpenClaw was acquired by OpenAI in February 2026. NemoClaw is built on top of it. That's a dependency on a competitor's infrastructure.
+---
 
-**Our lane:** We should be watching this closely. If OpenAI changes OpenClaw's licensing or direction, NemoClaw has a problem. We have the same dependency — but we're building PAN and the skills layer as our own moat above it.
+## Hardware Requirements (From the Repo)
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| CPU | 4 vCPU | 4+ vCPU |
+| RAM | 8 GB | 16 GB |
+| Disk | 20 GB free | 40 GB free |
+
+The sandbox image is ~2.4 GB compressed. On machines with less than 8 GB RAM, the OOM killer can trigger during image push. They recommend 8 GB swap as a workaround.
+
+Supported platforms: Linux (Ubuntu 22.04+), macOS Apple Silicon (Colima/Docker Desktop), Windows WSL (Docker Desktop). Podman on macOS not supported yet.
+
+---
+
+## What We Can Steal
+
+### 1. Out-of-Process Policy Enforcement
+Our entrypoint.sh does config validation at startup but security logic lives inside the agent. We need a lightweight policy layer that sits between the agent and the host — not inside the container, outside it.
+
+**Action:** Add a `policy.yaml` to the Cloud image and a simple proxy that enforces it. Even a basic network allowlist is a meaningful upgrade.
+
+### 2. The Thin Plugin / Versioned Blueprint Pattern
+NemoClaw keeps the CLI plugin tiny and stable. All orchestration logic is in a versioned Python blueprint with its own release cadence. Digest-verified before execution.
+
+**Action:** Our `entrypoint.sh` is doing too much. Split it — thin entrypoint that calls a versioned workspace bootstrap script. Easier to update without touching the core image.
+
+### 3. Hot-Reloadable Network + Inference Policy
+Network and inference policies can be updated at runtime without restarting the sandbox. Filesystem and process isolation is locked at creation.
+
+**Action:** Add a `/api/policy` endpoint to our entrypoint that lets the client update model routing and network rules live. No restart needed.
+
+### 4. Operator Approval Flow for Blocked Requests
+When the agent hits a blocked endpoint, OpenShell surfaces it in the TUI for operator approval. The agent can reason about the roadblock and propose a policy update — you have final say.
+
+**Action:** This is a UX pattern worth building into PocketAgent. When the agent can't do something due to a policy, it should tell the user clearly and ask for approval rather than silently failing.
+
+### 5. Single-Command Install with Named Sandboxes
+`nemoclaw onboard` creates a named sandbox (`my-assistant`). You can run multiple named sandboxes on the same host. Each has its own policy, model config, and state.
+
+**Action:** Our install.sh should support named instances. This is the foundation for PAN — multiple agents on one host, each isolated.
+
+### 6. Supply Chain Safety for Skills/Blueprints
+Blueprint artifacts are immutable, versioned, and digest-verified before execution. No skill or blueprint runs unless it passes verification.
+
+**Action:** PocketMP skills should have version pinning and digest verification. Right now anyone can push a skill and it runs with no verification. That's a security gap.
+
+---
+
+## What They Got Wrong (Our Advantage)
+
+**GPU dependency** — NemoClaw is optimized for DGX Spark, DGX Station, Jetson Thor. Local inference requires serious hardware. Our PocketModel failover stack works on a $7/month VPS today.
+
+**Enterprise-first = friction-first** — The target user is an IT department, not an individual. The policy system is powerful but complex. We're building for the person, not the org.
+
+**No network / social layer** — NemoClaw is single-agent. No concept of agents talking to each other, hiring each other, or forming a network. PAN is our moat.
+
+**OpenAI-owned foundation** — NemoClaw is built on OpenClaw which was acquired by OpenAI in February 2026. That's a dependency on a competitor. We share this risk — worth watching.
+
+**Local inference is still experimental** — They admit Ollama/vLLM support is not fully there yet. We're ahead on this.
 
 ---
 
 ## Immediate Actions
 
-| Priority | Action | Why |
-|----------|--------|-----|
-| HIGH | Add a `policy.yaml` concept to the Cloud image | Security baseline, differentiator for enterprise/prosumer users |
-| HIGH | Build a privacy router into PocketModel | Route sensitive requests to local models, general tasks to cloud |
-| HIGH | Move policy enforcement out-of-process | Don't trust the agent to police itself — enforce at the runtime level |
-| MED | Move agent personalization from install-time to first-conversation | Reduces install friction, matches NemoClaw's single-command UX |
-| MED | Add runtime config update endpoint to entrypoint | No restart needed to change model or settings |
-| MED | Implement cgroup resource limits per agent container (PAN infra) | Required for multi-agent hosting |
-| MED | Add audit trail to entrypoint (every allow/deny logged) | Needed for trust — users should be able to see what their agent did |
-| LOW | Explore zero-fork UI extension pattern for the client | Stay compatible with upstream OpenClaw updates |
-| LOW | Explore SDG sandbox concept for skill self-improvement | Agent tests new skills in isolation before deploying live |
-| WATCH | Monitor OpenClaw licensing changes post-OpenAI acquisition | NemoClaw and PocketAgent share this dependency risk |
+| Priority | Action |
+|----------|--------|
+| HIGH | Add `policy.yaml` + lightweight policy proxy to Cloud image |
+| HIGH | Move policy enforcement out-of-process (not inside the agent) |
+| HIGH | Build privacy router into PocketModel (sensitive = local, general = cloud) |
+| MED | Split `entrypoint.sh` into thin entrypoint + versioned bootstrap script |
+| MED | Add hot-reload config endpoint (model + network policy without restart) |
+| MED | Add operator approval flow when agent hits a blocked action |
+| MED | Support named sandbox instances (foundation for PAN multi-agent) |
+| MED | Add digest verification to PocketMP skill installs |
+| LOW | Move personalization from install-time to first conversation |
+| WATCH | Monitor OpenClaw licensing post-OpenAI acquisition |
 
 ---
 
 ## The Big Picture
 
-NemoClaw validates the entire direction. NVIDIA — the most important company in AI infrastructure — just announced that:
+NemoClaw validates the entire direction. Jensen Huang called OpenClaw "the operating system for personal AI" on stage at GTC. NVIDIA — the most important company in AI infrastructure — just shipped a security layer on top of the exact engine we run.
 
-1. OpenClaw is "the operating system for personal AI" (Jensen Huang's words)
-2. The next frontier is making agents **secure, persistent, and always-on**
-3. The enterprise market needs exactly what we're building for individuals
+We're not competing with NemoClaw. They're building the enterprise version. We're building the personal version. The market is being defined right now and the window is open.
 
-We're not competing with NemoClaw. We're building the personal version of what they're building for enterprises. The market is being defined right now. PocketAgent needs to be the name people say when they mean "personal sovereign agent" the same way NemoClaw will be the name enterprises say.
-
-The window is open. Ship.
+Ship.
 
 ---
 
-*Sources: [NVIDIA GTC 2026 Announcement](https://nvidianews.nvidia.com/news/nvidia-announces-nemoclaw) · [NVIDIA/OpenShell-Community GitHub](https://github.com/NVIDIA/OpenShell-Community) · [NemoClaw Architecture Docs](https://docs.nvidia.com/nemoclaw/latest/reference/architecture.html) · [NemoClaw.bot](https://nemoclaw.bot) · [Ajeet Raina — NemoClaw on Jetson AGX Thor](https://www.ajeetraina.com/getting-started-with-nvidia-nemoclaw-on-jetson-agx-thor) · [NVIDIA OpenShell Developer Blog](https://developer.nvidia.com/blog/run-autonomous-self-evolving-agents-more-safely-with-nvidia-openshell/)*
+*Sources: [NVIDIA/NemoClaw GitHub](https://github.com/NVIDIA/NemoClaw) · [NemoClaw Docs](https://docs.nvidia.com/nemoclaw/latest/) · [NVIDIA GTC 2026 Announcement](https://nvidianews.nvidia.com/news/nvidia-announces-nemoclaw) · [NVIDIA OpenShell Developer Blog](https://developer.nvidia.com/blog/run-autonomous-self-evolving-agents-more-safely-with-nvidia-openshell/) · [NVIDIA/OpenShell-Community GitHub](https://github.com/NVIDIA/OpenShell-Community)*
