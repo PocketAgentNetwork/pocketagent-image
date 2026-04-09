@@ -120,7 +120,7 @@ RUN git clone https://github.com/openclaw/openclaw.git . && \
     git checkout ${OPENCLAW_VERSION} && \
     echo ${OPENCLAW_VERSION} > /pocketagent/OPENCLAW_VERSION && \
     corepack enable && \
-    pnpm install --frozen-lockfile && \
+    pnpm install --no-frozen-lockfile && \
     pnpm build && \
     pnpm ui:install && \
     pnpm ui:build
