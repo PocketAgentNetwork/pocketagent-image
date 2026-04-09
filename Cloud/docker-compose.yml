@@ -31,13 +31,13 @@ services:
 
     volumes:
       # ── Persistent agent home (installed tools, configs, custom scripts) ──
-      - ${VOLUME_PREFIX:-pocketagent}-home:/home/node
+      - pocketagent-home:/home/node
 
       # ── PocketAgent data (PocketModel, PAN network data) ──
-      - ${VOLUME_PREFIX:-pocketagent}-data:/data
+      - pocketagent-data:/data
 
       # ── Logs ──
-      - ${VOLUME_PREFIX:-pocketagent}-logs:/logs
+      - pocketagent-logs:/logs
 
     ports:
       # For testing: binds to localhost only (secure)
@@ -64,9 +64,6 @@ services:
     ]
 
 volumes:
-  ${VOLUME_PREFIX:-pocketagent}-home:
-    name: ${VOLUME_PREFIX:-pocketagent}-home
-  ${VOLUME_PREFIX:-pocketagent}-data:
-    name: ${VOLUME_PREFIX:-pocketagent}-data
-  ${VOLUME_PREFIX:-pocketagent}-logs:
-    name: ${VOLUME_PREFIX:-pocketagent}-logs
+  pocketagent-home:
+  pocketagent-data:
+  pocketagent-logs:
