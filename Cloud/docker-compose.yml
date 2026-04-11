@@ -59,9 +59,7 @@ services:
         max-size: "10m"
         max-file: "3"
 
-    command: [
-      "pocketagent", "gateway"
-    ]
+    command: ["pocketagent", "gateway", "--allow-unconfigured"]
 
 volumes:
   pocketagent-home:
